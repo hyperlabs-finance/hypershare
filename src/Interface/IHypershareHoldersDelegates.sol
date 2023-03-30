@@ -12,7 +12,6 @@ interface IHypershareHoldersDelegates {
     function transferred(address from, address to, uint256 id, uint256 amount) external returns (bool);
     
 	function delegateTo(address delegatee, uint256 id) external payable;
-	function moveDelegates(address srcRep, address dstRep, uint256 id, uint256 amount) external;
 
     function getDelegates(address account, uint256 id) external view returns (address);
     function getCurrentVotes(address account, uint256 id) external view returns (uint256);

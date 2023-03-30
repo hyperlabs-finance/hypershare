@@ -65,7 +65,7 @@ contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
     ////////////////
     
     modifier onlyShare() {
-        require(msg.sender == _share);
+        require(msg.sender == address(_share));
         _;
     }
 

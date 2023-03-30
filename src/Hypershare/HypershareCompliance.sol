@@ -145,16 +145,19 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
     //////////////////////////////////////////////
     // CHECKS
     //////////////////////////////////////////////
+    
     function checkCanTransferBatch(
+        address from,
         address to,
-        uint256[] memory tokenId
+        uint256[] memory ids,
+        uint256[] memory amounts
     )
         public
         view
         returns (bool)
     {
-        for (uint256 i = 0; i < tokenId.length; i++) {
-            if (!checkRecieverIsElligible(to, tokenId[i])) {
+        for (uint256 i = 0; i < ids.length; i++) {
+            if (!checkRecieverIsElligible(to, ids[i])) {
                 return false;
             }
         }

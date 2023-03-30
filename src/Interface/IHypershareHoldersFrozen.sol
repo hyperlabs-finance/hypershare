@@ -29,7 +29,6 @@ interface IHypershareHoldersFrozen {
     function checkCanTransferBatch(address from, address to, uint256[] memory ids, uint256[] memory amounts) external  view  returns (bool);
     function checkFrozenAll(address account) external view returns (bool);
 
-    function getShareholdingMinimum(uint256 id) external view returns (uint256);
     function getFrozenShares(address account, uint256 id) external view returns (uint256);
     function getFrozenAccounts(address account, uint256 id) external view returns (bool);
 

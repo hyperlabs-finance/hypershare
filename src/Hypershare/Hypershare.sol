@@ -10,8 +10,8 @@ import "openzeppelin-contracts/contracts/access/Ownable.sol";
 
 // Calling interfaces
 import '../Interface/IHypershareCompliance.sol';
-import '../Interface/IHypershareHoldersFrozen.sol';
 import '../Interface/IHypershareHolders.sol';
+import '../Interface/IHypershareHoldersFrozen.sol';
 import '../Interface/IHypershareHoldersDelegates.sol';
 
 contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
@@ -20,9 +20,9 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     // INTERFACES
     ////////////////
 
-    IHypershareHoldersFrozen public _frozen;
-    IHypershareCompliance public _claimsRequired;
+    IHypershareCompliance public _compliance;
     IHypershareHolders public _holders;
+    IHypershareHoldersFrozen public _frozen;
     IHypershareHoldersDelegates public _delegates;
 
     ////////////////
@@ -49,7 +49,7 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 		_frozen = IHypershareHoldersFrozen(frozen);
         // Event
         
-		_claimsRequired = IHypershareCompliance(claimsRequired);
+		_compliance = IHypershareCompliance(claimsRequired);
         // Event
         
 		_holders = IHypershareHolders(holders);
@@ -169,13 +169,12 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 		override(ERC1155, ERC1155Pausable)
 	{
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
-        if (address(_claimsRequired) != address(0))
-            require(_claimsRequired.checkCanTransferBatch(to, from, ids, amounts), "Accounts is not elligible to recieve shares.");
+        if (address(_compliance) != address(0))
+            require(_compliance.checkCanTransferBatch(to, from, ids, amounts), "Accounts is not elligible to recieve shares.");
         if (address(_frozen) != address(0))
             require(_frozen.checkCanTransferBatch(to, from, ids, amounts), "Violates transfer limitations");
         if (address(_holders) != address(0))
             require(_holders.checkCanTransferBatch(to, from, ids, amounts), "Exceeds holder transfer frozen");
-		return true;
 	}
 
 	// After transfer hook
@@ -263,7 +262,7 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         public 
         onlyOwner
     {
-        _claimsRequired = IHypershareCompliance(claimsRequired);
+        _compliance = IHypershareCompliance(claimsRequired);
     }
 
     // Set _frozen

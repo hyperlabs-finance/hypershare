@@ -12,17 +12,16 @@ interface IHypershare is IERC1155 {
     event RecoverySuccess(address lostWallet, address newWallet);
 
     function checkTransferIsValid(address from, address to, uint256 id, uint256 amount) external returns (bool);
-    function checkIsNonFractional(uint256 amount, uint256 id) external returns (bool);
     
     function forcedTransferFrom(address from, address to, uint256 id, uint256 amount, bytes memory data) external;
     function forcedBatchTransferFrom(address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) external;
     
     function recover(address lostWallet, address newWallet, bytes memory data) external returns (bool);
     
-    function setFrozen(address frozen) public;
-    function setClaimsRequired(address claimsRequired) public;
-	function setHolders(address holders) public;
-	function setDelegates(address delegates) public;
+    function setFrozen(address frozen) external;
+    function setClaimsRequired(address claimsRequired) external;
+	function setHolders(address holders) external;
+	function setDelegates(address delegates) external;
 
     function mint(address account, uint256 id, uint256 amount, bytes memory data) external;
     function burn(address account, uint256 id, uint256 amount) external;

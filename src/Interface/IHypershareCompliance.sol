@@ -14,5 +14,5 @@ interface IHypershareCompliance {
     function getClaimTopicsRequired(uint256 id) external view returns (uint256[] memory);
 
     function checkRecieverIsElligible(address account, uint256 id) external view returns (bool);
-    function checkCanTransferBatch(address from, address to, uint256[] memory ids, uint256[] memory amounts) external  view  returns (bool);
+    function checkCanTransferBatch(address from, address to, uint256[] memory ids, uint256[] memory amounts) external view returns (bool);
 }

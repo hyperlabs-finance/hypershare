@@ -22,9 +22,11 @@ interface IHypershareHolders {
     function getShareholderLimitTransfer(uint256 id) external view returns (uint256);
     function getShareholderCount(uint256 id) external view returns (uint256);
     function getShareholderCountByCountry(uint256 id, uint16 country) external view returns (uint256);
+    function getShareholdingMinimum(uint256 id) external view returns (uint256);
     
     function checkCanTransferBatch(address from, address to, uint256[] memory ids, uint256[] memory amounts) external  view  returns (bool);
     function checkTransferWithinLimit(uint256 id) external returns (bool);
+    function checkIsNonFractional(uint256 amount, uint256 id) external returns (bool);
 
     function setShareholderLimitIssuer(uint256 holderLimit, uint256 id) external;
     function setShareholderLimitTransfer(uint256 holderLimit, uint256 id) external;

@@ -7,7 +7,9 @@ import './Utils/Checkpoint.sol';
 import '../Interface/IHypershare.sol';
 import '../Interface/IHypershareHoldersDelegates.sol';
 
-contract HypershareHoldersDelegates is IHypershareHoldersDelegates, Checkpoint {
+import 'openzeppelin-contracts/contracts/access/Ownable.sol';
+
+contract HypershareHoldersDelegates is IHypershareHoldersDelegates, Ownable, Checkpoint {
 
     ////////////////
     // INTERFACES

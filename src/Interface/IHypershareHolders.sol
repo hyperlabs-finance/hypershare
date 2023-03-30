@@ -8,9 +8,11 @@ interface IHypershareHolders {
     event HolderLimitSetTransfer(uint256 _transferHoolderLimit, uint256 _id);
     event HolderLimitSetIssuer(uint256 _transferHoolderLimit, uint256 _id);
     event MinimumShareholdingSet(uint256 id, uint256 minimumAmount);
-	
-    function transferred(address from, address to, uint256 id, uint256 amount) external;
-    function batchTransferred(address from, address to, uint256[] memory ids, uint256[] memory amounts) external;
+    
+    // Transfer functions
+    function batchTransferred(address from, address to, uint256[] memory ids, uint256[] memory amounts) external returns (bool);
+    function transferred(address from, address to, uint256 id, uint256 amount) external returns (bool);
+    
     function updateShareholders(address account, uint256 id) external;
     function pruneShareholders(address account, uint256 id) external;
     function created(address to, uint256 id, uint256 amount) external;

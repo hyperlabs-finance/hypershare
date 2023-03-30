@@ -7,8 +7,9 @@ interface IHypershareHoldersDelegates {
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate, uint256 id);
     event DelegateVotesChanged(address indexed delegate, uint256 indexed id, uint256 previousBalance, uint256 newBalance);
     
-    function transferred(address from, address to, uint256 id, uint256 amount) external;
-    function batchTransferred(address from, address to, uint256[] memory ids, uint256[] memory amounts) external;
+    // Transfer functions
+    function batchTransferred(address from, address to, uint256[] memory ids, uint256[] memory amounts) external returns (bool);
+    function transferred(address from, address to, uint256 id, uint256 amount) external returns (bool);
     
 	function delegateTo(address delegatee, uint256 id) external payable;
 	function moveDelegates(address srcRep, address dstRep, uint256 id, uint256 amount) external;

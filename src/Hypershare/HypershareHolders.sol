@@ -82,11 +82,12 @@ contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
     )
         public
         onlyShare
+        returns (bool)
     {
 		// Sanity checks 
 		require(ids.length == amounts.length, "Ids and amounts do not match");
         for (uint256 i = 0; i < ids.length; i++) {
-            transferred(from, to, ids[i], amounts[i]);
+            require(transferred(from, to, ids[i], amounts[i]), "Could not transfer");
         }
     } 
 
@@ -99,10 +100,12 @@ contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
     )
         public
         onlyShare
+        returns (bool)
     {
         _checkpoint(from, to, id, amount);
         updateShareholders(to, id);
         pruneShareholders(from, id);
+        return true;
     }
 
     //////////////////////////////////////////////
@@ -354,11 +357,18 @@ contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
         return _shareholders[id].length;
     }
 
+    // Returns the minimum shareholding
+    function getShareholdingMinimum(
+        uint256 id
+    )
+        public
+        view
+        returns (uint256)
+    {
+        return _shareholdingMinimum[id];
+    }
 
-
-
-
-
+    // Returns shares held at a previous point in time
     function getPriorShares(
         address account,
         uint256 id,

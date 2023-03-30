@@ -71,12 +71,14 @@ contract HypershareHoldersFrozen is IHypershareHoldersFrozen, Ownable  {
     )
         public
         onlyShare
+        returns (bool)
     {
 		// Sanity checks 
 		require(ids.length == amounts.length, "Ids and amounts do not match");
         for (uint256 i = 0; i < ids.length; i++) {
-            transferred(from, to, ids[i], amounts[i]);
+            require(transferred(from, to, ids[i], amounts[i]), "Could not transfer");
         }
+        return true;
     } 
 
     // Update the cap table on transfer
@@ -88,6 +90,7 @@ contract HypershareHoldersFrozen is IHypershareHoldersFrozen, Ownable  {
     )
         public
         onlyShare
+        returns (bool)
     {
         updateUnfrozenShares(from, id, amount);
     }
@@ -163,7 +166,6 @@ contract HypershareHoldersFrozen is IHypershareHoldersFrozen, Ownable  {
         public
         onlyShareOrOwner
     {
-        require(checkIsNonFractional(amount, id), "share transfers must be non-fractional");
         uint256 balance = _share.balanceOf(account, id);
         require(balance >= _frozenShares[id][account] + amount, "Amount exceeds available balance");
         _frozenShares[id][account] = _frozenShares[id][account] + (amount);
@@ -281,17 +283,6 @@ contract HypershareHoldersFrozen is IHypershareHoldersFrozen, Ownable  {
     //////////////////////////////////////////////
     // GETTERS
     //////////////////////////////////////////////
-
-    // Returns the minimum shareholding
-    function getMinimumShareholding(
-        uint256 id
-    )
-        public
-        view
-        returns (uint256)
-    {
-        return _shareholdingMinimum[id];
-    }
 
     // Return frozen shares 
     function getFrozenShares(

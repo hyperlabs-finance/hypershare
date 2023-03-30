@@ -9,8 +9,8 @@ interface IHypershareHoldersFrozen {
     event SharesUnfrozen(address indexed account, uint256 amount);
     
     // Transfer functions
-    function batchTransferred(address from, address to, uint256[] memory ids, uint256[] memory amounts) external;
-    function transferred(address from, address to, uint256 id, uint256 amount) external;
+    function batchTransferred(address from, address to, uint256[] memory ids, uint256[] memory amounts) external returns (bool);
+    function transferred(address from, address to, uint256 id, uint256 amount) external returns (bool);
     
     function toggleAddressFrozenAll(address account, bool freeze) external;
     function toggleAddressFrozen(address account, uint256 id, bool freeze) external;
@@ -29,7 +29,7 @@ interface IHypershareHoldersFrozen {
     function checkCanTransferBatch(address from, address to, uint256[] memory ids, uint256[] memory amounts) external  view  returns (bool);
     function checkFrozenAll(address account) external view returns (bool);
 
-    function getMinimumShareholding(uint256 id) external view returns (uint256);
+    function getShareholdingMinimum(uint256 id) external view returns (uint256);
     function getFrozenShares(address account, uint256 id) external view returns (uint256);
     function getFrozenAccounts(address account, uint256 id) external view returns (bool);
 

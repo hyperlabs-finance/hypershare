@@ -7,5 +7,4 @@
 	Agreement signer - sign an agreement and receive shares
 	Side letter - sign an agreement at point of sale that 
 	Burner - burn and re-issue shares, i.e. burn token 1 (share type A) and reissue share token 2 (share type B)
-	Scrip - import the scrip contracts
 	Dividend? 

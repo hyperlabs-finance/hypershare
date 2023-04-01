@@ -57,11 +57,21 @@ contract Hyperwrap is ERC20, ERC1155Holder {
      * Clients calling this function must replace the `\{id\}` substring with the
      * actual token type ID.
      */
-    function uri() public view virtual override returns (string memory) {
+    function uri()
+        public
+        view
+        virtual
+        returns (string memory)
+    {
         return _uri;
     }
 
-    function tokenId() public view virtual override returns (string memory) {
+    function tokenId()
+        public
+        view
+        virtual
+        returns (uint256)
+    {
         return _id;
     }
 

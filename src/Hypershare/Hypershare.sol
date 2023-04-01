@@ -10,9 +10,7 @@ import "openzeppelin-contracts/contracts/access/Ownable.sol";
 
 // Calling interfaces
 import '../Interface/IHypershareCompliance.sol';
-import '../Interface/IHypershareHolders.sol';
-import '../Interface/IHypershareHoldersFrozen.sol';
-import '../Interface/IHypershareHoldersDelegates.sol';
+import '../Interface/IHypershareRegistry.sol';
 
 contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 
@@ -20,15 +18,17 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     // INTERFACES
     ////////////////
 
+    // The compliance claims checker
     IHypershareCompliance public _compliance;
-    IHypershareHolders public _holders;
-    IHypershareHoldersFrozen public _frozen;
-    IHypershareHoldersDelegates public _delegates;
+
+    // External registry of shareholders, delegates and frozen accounts / shares
+    IHypershareRegistry public _registry;
 
     ////////////////
     // STATE
     ////////////////
 
+    // Total tokens, incremented value used for token id
     uint256 totalTokens;
 
     ////////////////
@@ -37,25 +37,16 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 
     constructor(
 		string memory uri_,
-        
-        address frozen,
-        address claimsRequired,
-        address holders,
-        address delegates 
+        address compliance,
+        address registry
     )
         // Used as the URI for all token types by relying on ID substitution, e.g. https://token-cdn-domain/{id}.json
         ERC1155(uri_)
     {
-		_frozen = IHypershareHoldersFrozen(frozen);
+		_compliance = IHypershareCompliance(compliance);
         // Event
         
-		_compliance = IHypershareCompliance(claimsRequired);
-        // Event
-        
-		_holders = IHypershareHolders(holders);
-        // Event
-        
-		_delegates = IHypershareHoldersDelegates(delegates);
+		_registry = IHypershareRegistry(registry);
         // Event
     }
 
@@ -127,7 +118,7 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         onlyOwner 
         returns (bool)
     {
-        _frozen.toggleAddressFrozenAll(newWallet, _frozen.checkFrozenAll(lostWallet));
+        _registry.toggleAddressFrozenAll(newWallet, _registry.checkFrozenAll(lostWallet));
     
         // For all tokens 
         for (uint256 id = 0; id < totalTokens; id++) {
@@ -139,10 +130,12 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
                 forcedTransferFrom(lostWallet, newWallet, id, balanceOf(lostWallet, id), data);
 
                 // Freeze partial shares
-                uint256 frozenShares = _frozen.getFrozenShares(lostWallet, id);
-                if (frozenShares > 0) {
-                    _frozen.freezeShares(newWallet, id, frozenShares);
-                }
+                uint256 frozenShares = _registry.getFrozenShares(lostWallet, id);
+
+                // If has frozen shares freeze on new account
+                if (frozenShares > 0) 
+                    _registry.freezeShares(newWallet, id, frozenShares);
+                
             }
         }
         
@@ -171,10 +164,8 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
         if (address(_compliance) != address(0))
             require(_compliance.checkCanTransferBatch(to, from, ids, amounts), "Accounts is not elligible to recieve shares.");
-        if (address(_frozen) != address(0))
-            require(_frozen.checkCanTransferBatch(to, from, ids, amounts), "Violates transfer limitations");
-        if (address(_holders) != address(0))
-            require(_holders.checkCanTransferBatch(to, from, ids, amounts), "Exceeds holder transfer frozen");
+        if (address(_registry) != address(0))
+            require(_registry.checkCanTransferBatch(to, from, ids, amounts), "Exceeds holder transfer frozen");
 	}
 
 	// After transfer hook
@@ -189,12 +180,8 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 		internal
 		override(ERC1155)
 	{
-        if (address(_frozen) != address(0))
-			require(_frozen.batchTransferred(from, to, ids, amounts), "Could not update transfer frozen with transfer");
-        if (address(_holders) != address(0))
-			require(_holders.batchTransferred(from, to, ids, amounts), "Could not update shareholders with transfer");
-        if (address(_delegates) != address(0))
-			require(_delegates.batchTransferred(from, to, ids, amounts), "Could not update delegates with transfer");
+        if (address(_registry) != address(0))
+			require(_registry.batchTransferred(from, to, ids, amounts), "Could not update shareregistry with transfer");
 	}
 
     //////////////////////////////////////////////
@@ -215,7 +202,7 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         _mint(account, id, amount, data);
 
         // Updates
-        _holders.created(account, id, amount);  
+        _registry.mint(account, id, amount);  
 
         // Event
     }
@@ -233,14 +220,13 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         _burn(account, id, amount);
 
         // Updates
-        _frozen.updateUnfrozenShares(account, id, amount); 
-        _holders.pruneShareholders(account, id);  
+        _registry.burn(account, id, amount);
 
         // Event
     }
 
     //////////////////////////////////////////////
-    // CREATE TOKEN
+    // CREATE NEW TOKEN
     //////////////////////////////////////////////
 
     // Create token
@@ -249,50 +235,31 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         onlyOwner
     {
         totalTokens++;
+        // #TODO
     }
 
     //////////////////////////////////////////////
     // SETTERS
     //////////////////////////////////////////////
 
-    // Set claims required
-    function setClaimsRequired(
-        address claimsRequired
+    // Set compliance
+    function setCompliance(
+        address compliance
     ) 
         public 
         onlyOwner
     {
-        _compliance = IHypershareCompliance(claimsRequired);
+        _compliance = IHypershareCompliance(compliance);
     }
 
-    // Set _frozen
-    function setFrozen(
-        address frozen
-    )
-        public
-        onlyOwner 
-    {
-        _frozen = IHypershareHoldersFrozen(frozen);
-    }
-
-	// Set holders
-	function setHolders(
-        address holders
+	// Set registry
+	function setRegistry(
+        address registry
     )
         public
         onlyOwner
     {
-        _holders = IHypershareHolders(holders);
+        _registry = IHypershareRegistry(registry);
     }
 
-	// Set delegates
-	function setDelegates(
-        address delegates
-    )
-        public
-        onlyOwner
-    {
-        _delegates = IHypershareHoldersDelegates(delegates);
-    }
-	
 }

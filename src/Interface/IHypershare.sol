@@ -18,10 +18,8 @@ interface IHypershare is IERC1155 {
     
     function recover(address lostWallet, address newWallet, bytes memory data) external returns (bool);
     
-    function setFrozen(address frozen) external;
-    function setClaimsRequired(address claimsRequired) external;
-	function setHolders(address holders) external;
-	function setDelegates(address delegates) external;
+    function setCompliance(address compliance) external;
+	function setRegistry(address registry) external;
 
     function mint(address account, uint256 id, uint256 amount, bytes memory data) external;
     function burn(address account, uint256 id, uint256 amount) external;

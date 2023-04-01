@@ -13,10 +13,10 @@ contract Checkpoint {
         uint216 shares;
     }
 
-    // Mapping from holder address to 
+    // Mapping from delegate address to 
     mapping(address => mapping(uint256 => mapping(uint256 => Checkpoint))) public _checkpoints;
 
-    // Mapping from holder address to 
+    // Mapping from delegate address to 
     mapping(address => mapping(uint256 => uint256)) public _numCheckpoints;
 
     //////////////////////////////////////////////

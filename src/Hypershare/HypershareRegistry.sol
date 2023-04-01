@@ -4,26 +4,31 @@ pragma solidity ^0.8.6;
 
 // Inherited
 import './Utils/Checkpoint.sol';
-import '../Interface/IHypershareHolders.sol';
+import '../Interface/IHypershareRegistry.sol';
 import 'openzeppelin-contracts/contracts/access/Ownable.sol';
 
 // Calls
 import '../Interface/IHyperbaseIdentityRegistry.sol';
 import '../Interface/IHypershare.sol';
 
-contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
+contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
 
     ////////////////
     // INTERFACES
     ////////////////
 
+    // The share contract instance
     IHypershare _share;
+
+    // The Hypershare identity reg
     IHyperbaseIdentityRegistry _identities;
 
     ////////////////
     // STATES
     ////////////////
 	
+    // SHAREHOLDERS
+    
     // Mapping from token ID to the addresses of all shareholders
     mapping(uint256 => address[]) public _shareholders;
 
@@ -44,6 +49,22 @@ contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
     
     // Mapping from token ID to non-fractional bool, transfers that result in fractional holdings will fail
     mapping(uint256 => bool) public _shareholdingNonFractional;
+
+    // DELEGATES
+
+    // Mapping from holder to mapping from token ID to delegate address 
+    mapping(address => mapping(uint256 => address)) internal _delegates;    
+
+    // FROZEN
+
+    // Mapping from user address to bool for frozen y/n across all tokens
+    mapping(address => bool) public _frozenAll;
+
+    // Mapping from token ID to user address to bool for frozen y/n
+    mapping(uint256 => mapping(address => bool)) public _frozenAccounts;
+
+    // Mapping from token ID to mapping from user address to uint amount of shares frozen
+	mapping(uint256 => mapping(address => uint256)) public _frozenShares;
 
     ////////////////
     // CONSTRUCTOR
@@ -66,6 +87,11 @@ contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
     
     modifier onlyShare() {
         require(msg.sender == address(_share));
+        _;
+    }
+
+    modifier onlyShareOrOwner() {
+        require(msg.sender == address(_share) || msg.sender == owner(), "Only token contract can call this function");
         _;
     }
 
@@ -102,14 +128,50 @@ contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
         onlyShare
         returns (bool)
     {
-        _checkpoint(from, to, id, amount);
+        _checkpoint(_delegates[from][id], _delegates[to][id], id, amount);
+
         updateShareholders(to, id);
         pruneShareholders(from, id);
+        updateUnfrozenShares(from, id, amount);
+
+        // #TODO update delegates? Rather than _checkpoint
         return true;
     }
 
     //////////////////////////////////////////////
-    // CAP TABLE
+    // MINT | BURN 
+    //////////////////////////////////////////////    
+
+    // Update the cap table on mint
+    function mint(
+        address to,
+        uint256 id,
+        uint256 amount
+    )
+        public
+        onlyShare
+    {
+        require(amount > 0, "No token created");
+        updateShareholders(to, id);
+    }
+    
+    // Burn tokens
+    function burn(
+        address account,
+        uint256 id,
+        uint256 amount
+    )
+        public
+        onlyShare
+    {
+        updateUnfrozenShares(account, id, amount); 
+        pruneShareholders(account, id);  
+
+        // Event
+    }
+
+    //////////////////////////////////////////////
+    // SHAREHOLDERS
     //////////////////////////////////////////////
 
     // Add a new shareholder to shareholders
@@ -151,18 +213,126 @@ contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
         _shareholderCountries[id][_identities.getCountryByAddress(account)]--;
     }
 	
-    // Update the cap table on mint
-    function created(
-        address to,
+
+    //////////////////////////////////////////////
+    // DELEGATE
+    //////////////////////////////////////////////
+
+    // Delegates voting power to an address
+    function delegateTo(
+        address delegatee,
+        uint256 id
+    )
+        external
+        payable
+    {
+        address currentDelegate = _delegates[msg.sender][id] ;
+
+        _delegates[msg.sender][id] = delegatee;
+
+        // Move delegates
+        _checkpoint(
+            currentDelegate,
+            delegatee,
+            id,
+            _share.balanceOf(msg.sender, id)
+        );
+
+        // Event
+        emit DelegateChanged(msg.sender, currentDelegate, delegatee, id);
+    }
+
+    //////////////////////////////////////////////
+    // FREEZE | UNFREEZE
+    //////////////////////////////////////////////
+
+    //  
+    function toggleAddressFrozenAll(
+        address account,
+        bool freeze
+    )
+        public
+        onlyShareOrOwner 
+    {
+        // Mapping from user address to bool for frozen y/n across all tokens
+        _frozenAll[account] = freeze;
+
+        // Events
+        emit AddressFrozen(account, freeze, msg.sender);
+    }
+
+    // Set an address to frozen
+    function toggleAddressFrozen(
+        address account,
+        uint256 id,
+        bool freeze
+    )
+        public
+        onlyShareOrOwner 
+    {
+        _frozenAccounts[id][account] = freeze;
+
+        // Event
+        
+    }
+
+    // Set a batch of addresses to frozen
+    function batchToggleAddressFrozen(
+        address[] memory accounts,
+        uint256[] memory ids,
+        bool[] memory freeze
+    )
+        public
+        onlyShareOrOwner
+    {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            toggleAddressFrozen(accounts[i], ids[i], freeze[i]);
+        }
+    }
+    
+    // Freeze a portion of shares for a batch of accounts
+    function batchFreezeShares(
+        address[] memory accounts,
+        uint256[] memory ids,
+        uint256[] memory amounts
+    )
+        public
+    {
+        require((accounts.length == ids.length) && (ids.length == amounts.length), "ERC1155: accounts, ids and amounts length mismatch");   
+        for (uint256 i = 0; i < accounts.length; i++) {
+            freezeShares(accounts[i], ids[i], amounts[i]);
+        }
+    }
+
+    // Freeze a portion of shares for a single account
+    function freezeShares(
+        address account,
         uint256 id,
         uint256 amount
     )
         public
-        onlyShare
+        onlyShareOrOwner
     {
-        require(amount > 0, "No token created");
-        _checkpoint(address(0), to, id, amount);
-        updateShareholders(to, id);
+        uint256 balance = _share.balanceOf(account, id);
+        require(balance >= _frozenShares[id][account] + amount, "Amount exceeds available balance");
+        _frozenShares[id][account] = _frozenShares[id][account] + (amount);
+        emit SharesFrozen(account, amount);
+    }
+
+    // Update the unfrozen balance that is available to transfer post transfer
+    function updateUnfrozenShares(
+        address from,
+        uint256 id,
+        uint256 amount
+    )
+        public
+    {
+        uint256 freeBalance = _share.balanceOf(from, id) - (_frozenShares[id][from]);
+        if (amount > freeBalance) {
+            uint256 tokensToUnfreeze = amount - (freeBalance);
+            _frozenShares[id][from] = _frozenShares[id][from] - (tokensToUnfreeze);
+            emit SharesUnfrozen(from, tokensToUnfreeze);
+        }
     }
 
     //////////////////////////////////////////////
@@ -181,6 +351,7 @@ contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
     {
         for (uint256 i = 0; i < ids.length; i++) {
             checkTransferWithinLimit(ids[i]);
+            checkCanTransfer(from, to, ids[i], amounts[i]);
         }
         return true;
     }
@@ -199,8 +370,8 @@ contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
         else {
             require((_shareholders[id].length + 1) < getShareholderLimitTransfer(id), "Transfer exceeds the shareholder limit");
         }
-        // #TODO _shareholdingMinimum
-        // #TODO _shareholdingNonFractional
+        // #TODO: enforce _shareholdingMinimum
+        // #TODO: enforce _shareholdingNonFractional
         return true;
     }
 
@@ -220,9 +391,91 @@ contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
         else return true;
     }
 
+    
+
+    // Return bool if the transfer passes share
+    function checkCanTransfer(
+        address to,
+        address from,
+        uint256 id,
+        uint256 amount
+    )
+        public
+        view
+        returns (bool)
+    {
+        require(checkIsNotFrozenAllTransfer(from, to), "Wallet is frozen");
+        require(checkIsNotFrozenAccountsTransfer(id, from, to), "Wallet is frozen");
+        require(checkIsNotFrozenSharesTransfer(amount, id, from), "Insufficient Balance");
+
+        return true;
+    }
+    
+    // Check is not frozen for all
+    function checkIsNotFrozenAllTransfer(
+        address from,
+        address to
+    )
+        public
+        view
+        returns (bool)
+    {
+        if (!_frozenAll[to] && !_frozenAll[from]) return true;  
+        else return false;  
+    }
+    
+    // Return bool address and tokens are not frozen for token id
+    function checkIsNotFrozenAccountsTransfer(
+        uint256 id,
+        address from,
+        address to
+    )
+        public
+        view
+        returns (bool)
+    {
+        if (!_frozenAccounts[id][to] && !_frozenAccounts[id][from]) return true;  
+        else return false;  
+    }
+
+    // 
+    function checkIsNotFrozenSharesTransfer(
+        uint256 amount,
+        uint256 id,
+        address from
+    )
+        public
+        view
+        returns (bool)
+
+    {
+        if (amount <= (_share.balanceOf(from, id) - _frozenShares[id][from])) return true;  
+        else return false;  
+    }
+
+    // Return frozen all
+    function checkFrozenAll(   
+        address account
+    )
+        public
+        view
+        returns (bool)
+    {
+        return _frozenAll[account];
+    }
+
+
     //////////////////////////////////////////////
-    // NON FRACTIONAL
+    // SETTERS
     //////////////////////////////////////////////
+
+    // #TODO
+    function setShare(
+    )
+        public 
+        onlyOwner
+    {
+    }
 
     // Sets the holder limit as required for share purpose for transferees
     function setShareholderLimitTransfer(
@@ -299,7 +552,9 @@ contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
     // GETTERS
     //////////////////////////////////////////////
 
-    // 
+    // SHAREHOLDERS
+
+    // #TODO desc
     function getHolderAt(
         uint256 index,
         uint256 id
@@ -368,8 +623,47 @@ contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
         return _shareholdingMinimum[id];
     }
 
-    // Returns shares held at a previous point in time
-    function getPriorShares(
+    // DELEGATES
+
+    // #TODO desc
+    function getDelegates(
+        address account,
+        uint256 id
+    )
+        public
+        view
+        returns (address)
+    {
+        address current = _delegates[account][id];
+
+        return
+            current == address(0) 
+                ? account 
+                : current;
+    }
+    
+    // #TODO desc
+    function getCurrentVotes(
+        address account,
+        uint256 id
+    )
+        public
+        view
+        returns (uint256)
+    {
+        // Won't underflow because decrement only occurs if positive `nCheckpoints`.
+        unchecked {
+            uint256 nCheckpoints = _numCheckpoints[account][id];
+
+            return
+                nCheckpoints != 0
+                    ? _checkpoints[account][id][nCheckpoints - 1].shares
+                    : 0;
+        }
+    }
+
+    // #TODO desc
+    function getPriorVotes(
         address account,
         uint256 id,
         uint256 timestamp
@@ -416,18 +710,31 @@ contract HypershareHolders is IHypershareHolders, Checkpoint, Ownable  {
             return _checkpoints[account][id][lower].shares;
         }
     }
+
+    // FROZEN
     
-    //////////////////////////////////////////////
-    // SETTERS
-    //////////////////////////////////////////////
-
-    function setShare(
-
+    // Return frozen shares 
+    function getFrozenShares(
+        address account,
+        uint256 id
     )
-        public 
-        onlyOwner
+        public
+        view
+        returns (uint256)
     {
-        
+        return _frozenShares[id][account];
     }
 
+    // Return frozen accounts 
+    function getFrozenAccounts(
+        address account,
+        uint256 id
+    )
+        public
+        view
+        returns (bool)
+    {
+        return _frozenAccounts[id][account];
+    }
+    
 }

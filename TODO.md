@@ -2,7 +2,7 @@
 
 2. Error messages
 
-3. Ensure these fields are accesible in or via the HypershareRegister contract: Name, Address, Share class, Number of shares, Amount paid for shares, Date person was registered as a member, Date person ceased to be registered as a member
+3. Ensure these fields are accessible in or via the HypershareRegister contract: Name, Address, Share class, Number of shares, Amount paid for shares, Date person was registered as a member, Date person ceased to be registered as a member
 
 4. Restructure the voting contract so that it can be used to annex HyperDAO or as a standalone voting contract for off-chain votes. 
 

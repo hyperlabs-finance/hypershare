@@ -18,7 +18,6 @@ Although Hypershare was developed with the equity shares in mind, the ___ is fle
 
 Hypershare harnesses trustlessness and governs interactions between parties, allowing value to flow more efficiently. By creating a shared language for describing equity investments and other tokenized assets we can standardise interactions allowing people and organisations to work together in ways that would never before have been possible.
 
-
 ## Asset tokenisation
 
 ### Tokens

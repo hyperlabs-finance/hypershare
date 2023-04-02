@@ -8,7 +8,6 @@ import '.././Interface/IHypershareCompliance.sol';
 
 // Calling
 import '.././Interface/IHyperbaseClaimRegistry.sol';
-import '.././Interface/IHyperbaseClaimVerifiersRegistry.sol';
 
 contract HypershareCompliance is IHypershareCompliance, Ownable {
 
@@ -16,11 +15,8 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
     // INTERFACES
     ////////////////
 
-    // Claims contract
-    IHyperbaseClaimRegistry public _claimsRegistry;
-
-    // Claim verifiers 
-    IHyperbaseClaimVerifiersRegistry public _claimVerifiersRegistry;
+    // Claims reg contract
+    IHyperbaseClaimRegistry public _claimRegistry;
 
   	////////////////
     // STATE
@@ -40,11 +36,8 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
         address claims,
         address claimVerifiers
     ) {
-        _claimsRegistry = IHyperbaseClaimRegistry(claims);
+        _claimRegistry = IHyperbaseClaimRegistry(claims);
         emit claimRegistrySet(claims);
-
-        _claimVerifiersRegistry = IHyperbaseClaimVerifiersRegistry(claimVerifiers);
-        emit claimVerifiersRegistrySet(claimVerifiers);
     }
 
     //////////////////////////////////////////////
@@ -121,25 +114,14 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
     //////////////////////////////////////////////
 
     // Set claims
-    function setclaims(
+    function setClaimRegistry(
         address claims
     )
         public
         onlyOwner
     {
-        _claimsRegistry = IHyperbaseClaimRegistry(claims);
+        _claimRegistry = IHyperbaseClaimRegistry(claims);
         emit claimRegistrySet(claims);
-    }
-
-    // Set claim verifiers
-    function setClaimVerifiers(
-        address claimVerifiers
-    )
-        public
-        onlyOwner
-    {
-        _claimVerifiersRegistry = IHyperbaseClaimVerifiersRegistry(claimVerifiers);
-        emit claimVerifiersRegistrySet(claimVerifiers);
     }
     
     //////////////////////////////////////////////
@@ -185,7 +167,7 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
             for (uint256 i = 0; i < _claimTopicsRequired[tokenId].length; i++) {
 
                 // Get claim ids by the topic of the required claim
-                bytes32[] memory claimIds = _claimsRegistry.getClaimIdsByTopic(account, _claimTopicsRequired[tokenId][i]);
+                bytes32[] memory claimIds = _claimRegistry.getClaimIdsByTopic(account, _claimTopicsRequired[tokenId][i]);
                 
                 // If the subject does not have any claims corresponding to the required topics
                 if (claimIds.length == 0) return false;
@@ -193,7 +175,7 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
                 // Iterate through claims by tokenId and check validity
                 for (uint256 ii = 0; ii < claimIds.length; ii++) {
 
-                    if (_claimsRegistry.checkIsClaimValidById(account, claimIds[ii])) return true;
+                    if (_claimRegistry.checkIsClaimValidById(account, claimIds[ii])) return true;
 
                     else return false; 
                     
@@ -202,8 +184,6 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
             return true;
         }
     }
-
-
 
     //////////////////////////////////////////////
     // GETTERS

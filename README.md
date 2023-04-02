@@ -1,87 +1,44 @@
 # Hypershare
 
-* Welcome to Hypershare: a digital equity infrastructure for the internet age.*
+*Welcome to Hypershare: a digital equity infrastructure for the internet age.*
 
 ## What's the problem?
 
-DeFi is finance for the age of the internet, an open global financial system running atop the blockchain. DeFi offers the first radical alternative to the disconnected, opaque, decades-old practices and infrastructure of traditional finance. Having grown from a relative backwater into a thriving several hundred billion industry almost overnight, the community today is at the centre of a technical revolution that will eventually subsume the entire financial sector. But what about the other $27 trillion in capital markets? DeFi has survived up until now by avoiding regulated assets, but for the space to evolve a new type of protocol must emerge.
+DeFi is finance for the age of the internet, an open global financial system running atop the blockchain. DeFi offers the first radical alternative to the disconnected, opaque, decades-old practices and infrastructure of traditional finance. Having grown from a relative backwater into a thriving several hundred billion industry almost overnight, the community today is at the centre of a technical revolution that will eventually subsume the entire financial sector. But what about the other $27 trillion in capital markets? DeFi has survived up until now by avoiding regulated assets but for the space to evolve a new type of protocol must emerge.
 
-The collision between regulated assets and permissionless protocols presents a unique set of technical, ethical, and regulatory challenges. Current solutions for building compliant solutions centralise control and reintroduce middlemen who extract value from users and prevent the space from evolving. If the growth of regulated assets in decentralised finance is dependent on intermediaries, it seems doubtful they will ever see wider adoption.
+We believe that decentralised finance is an opportunity to transform the analogue, disconnected and opaque infrastructure of venture investment today. Yet, despite their vast potential the blockchain and DeFi remain arcane and inaccessible to outsiders.Our mission is to broaden access to the blockchain and allow venture founders and investors to harness its radical potential. The collision between regulated assets and permissionless protocols presents a unique set of technical, ethical, and regulatory challenges. Current solutions for building compliant solutions centralise control and reintroduce middlemen who extract value from users and prevent the space from evolving. If the growth of regulated assets in decentralised finance is dependent on intermediaries, it seems doubtful they will ever see wider adoption.
 
 ## What is Hypershare?
 
-Hypershare is a digital equity infrastructure for venture investment. Our mission is to broaden access to the blockchain and allow venture founders and investors to harness its radical potential. We believe that decentralised finance is an opportunity to transform the analogue, disconnected and opaque infrastructure of venture investment today. Yet, despite their vast potential the blockchain and DeFi remain arcane and inaccessible to outsiders.
+Hypershare is a sophistictaed ___ for asset tokenisation
 
-Hypershare allows entrepreneurs to create and manage tokenised equity, automate compliance and raise venture funding. For investors, Hypershare provides a platform to realise unprecedented liquidity on assets that would have previously been immobile, enabling equity shares to be traded like any other crypto asset.
+Hypershare allows entrepreneurs to create and manage tokenised equity, automate compliance and raise venture funding. For investors, Hypershare provides a platform to realise unprecedented liquidity on assets that would have previously been immobile, enabling equity shares to be traded like any other crypto asset. H
 
-The protocol provides a suite of tools for issuers to create and manage digital equity assets, and further, allows them to bypass the need for complex administrative procedures, dedicated legal and financial support, and custom token solutions. Hypershare uses the blockchain as a transfer infrastructure and secure record of ownership, providing a simple, composable transactional layer for the global venture ecosystem. Using our technical and legal platform, startups can create and issue digital equity directly to investors and employees. Additionally, Hypershare provides a number of fine-grain issuer controls and automated compliance verifications, as well an extensible library of legal agreements and modules. Importantly, the protocol is open, interoperable, and comes ready to integrate with external machine systems out of the box.
+Although Hypershare was developed with the equity shares in mind, the ___ is flexible enough represent a wide array of real world asset (RWA), from tokenized IP to real estate. 
 
-Fundamentally, Hypershare is a control structure. It harnesses trustlessness and governs interactions between parties allowing value to flow more efficiently. By creating a shared language for describing equity investments we can standardise interactions allowing people and organisations to work together in ways that would have never been possible before.
-
-## For Founders
-
-For founders, Hypershare provides a sophisticated suite of smart contracts for the issue and transfer of tokenised equity. These contracts will support an organisation throughout its life and serve as a shared public utility for ventures and investors alike. An organisation's profile will act much like an email address or social media profile—a reliable reference point built for a specific utility.
-
-By tokenizing shares, Hypershare makes it drastically faster, simpler and cheaper for companies to manage equity and begin to raise capital than through traditional means. Instead of needing dedicated support, founders can deploy a suite of smart contracts at the price of gas. These hybrid legal contracts enforce rights both on-chain and off-chain thereby bridging the gap between traditional and decentralised finance.
-
-To support registered assets in a way that is flexible, non-invasive, and scalable Hypershare has created a suite of automated compliance checks that are instrumental in making the compliance process painless. By enforcing compliance as a part of the architecture of the market we can shift the burden onto code and away from users creating a truly frictionless experience that allows value to flow freely.
-        
-## For Investors
-
-Hypershare allows investors to engage broadly in on-chain venture investment, trading and governance directly from their smart wallets. We hope to be for tokenised equity what Uniswap and Opensea were for their retrospective communities, pioneers of thriving ecosystems that created value for millions of users.
-
-Illiquidity is the single greatest problem in the venture investment industry. It compounds risk, increases the difficulty of every other process and constrains the market based on the type of opportunity investors can realise an exit on. Greater liquidity will not only benefit investors but have direct knock-on effects for founders who seek to raise funding and ultimately, broaden the scope of venture investment allowing it to support a more diverse range of opportunities.
-
-## For Developers 
-
-In the current landscape there are countless equity crowdfunding platforms, the majority of which develop proprietary software to support their operations. Not only is this inefficient but it silos value. For developers Hypershare can be easily integrated via the SDK meaning that each platform can continue to provide individual services for their respective while creating open and composable digital assets that are recorded on the blockchain.
-
-As a platform for programmable value the blockchain opens up a multitude of exciting new use cases, one example of which is on-chain voting. By conducting shareholder votes on-chain it is possible to allow investors to engage directly in the governance no matter how small their shareholding. This is just one of a multitude of use cases that would have previously been impractical or impossible before tokenisation.
-
-## Other Uses
-
-Based on the popular ERC-1155 token standard.  
-
-While Hypershare was designed to represent equity, it is flexible enough to represent any asset, from tokenised IP to property.
+Hypershare harnesses trustlessness and governs interactions between parties, allowing value to flow more efficiently. By creating a shared language for describing equity investments and other tokenized assets we can standardise interactions allowing people and organisations to work together in ways that would never before have been possible.
 
 
+## Asset tokenisation
 
+### Tokens
 
-
-
-
-
-# Existing Concepts from the Blockchain 
-The term “blockchain” was first coined in a white paper published in October 2008, by an anonymous person or group of people known as “Satoshi Nakamoto”. The paper detailed a “peer-to-peer electronic cash system”. Nakamoto’s vision was to use the blockchain to bypass the need for trusted third parties, allowing people to transact directly with one another. To do so, the blockchain makes use of a system state that is distributed across a network of computers or “nodes”. Whereas security in centralised infrastructure is created through “defence-in-depth”, often relying on tens of millions of dollars of technical resources and many layers of security, in many ways, the blockchain can be considered “defence-in-breadth”. By spreading the system state across a network of nodes, no single point is vulnerable to coercion or attack. This design makes it extremely difficult to falsify transactions, meaning user uncertainty regarding security is minimised while creating a completely public system that anyone can make use of. In this regard, the blockchain satisfies a need that very few people recognised before its advent: that of an independent digital execution platform. One that is open, accessible, and can be trusted by all participants.
-
-## Decentralised Finance
-Decentralised finance (“DeFi”) is finance for the age of the internet, an open global system running atop the blockchain. DeFi offers the first radical alternative to the disconnected, opaque, decades-old practices and infrastructure of traditional finance. DeFi encompasses a vast array of services that fulfil one of the blockchain's core possibilities: fostering financial transactions that aren’t officiated by banks, brokers, trading platforms, payment processors, or any other kind of intermediary. These services can be used by anyone with an internet connection, without the need for a bank account or permission from a central authority. Some examples of popular DeFi protocols include: 
-
-Uniswap: A decentralised exchange protocol that allows users to trade tokens without the need for brokers or trusted third parties. At the time of writing, Uniswap has over $928 billion in trading volume.
-
-Aave: A decentralised lending platform that uses smart contracts to allow borrowers instant loans without the need for a bank. At the time of writing, over $11.2 billion in assets are locked into the Aave protocol.
-
-MakerDAO: A decentralised credit platform that supports Dai, a stablecoin whose value is pegged to USD. At the time of writing, over $14.52 billion in assets are locked into the MakerDao protocol.
-
-Although DeFi is still in its early stages, it has the potential to disrupt the traditional financial system by providing cheaper, faster, and more accessible financial services than its centralised counterparts. With minimal barriers to entry and smart contracts enforcing the terms of an agreement, communities of strangers from across the globe can participate in ways that have never before been possible.
-
-## Tokens
 In DeFi, transactions are settled directly on the blockchain. As a result, they don’t allow for the use of fiat currency. Instead, they deal exclusively with crypto assets such as tokens. A token is a blockchain-native digital asset that typically represents a unit of ownership. Tokens can be used in a variety of ways. For example, a token may be used to represent a certain amount of currency in a financial transaction, or, alternatively, a token could be used to represent a vote in an online poll. Tokens typically belong to one of two common categories: 
 
 *Exchange tokens*: are intended as a decentralised tool that allows holders to access goods and services without the use of traditional intermediaries. The FCA states that “[exchange] tokens are designed to provide limited or no rights for token holders, and there is usually not a single issuer to enforce rights against”.
 
 *Utility tokens*: grant the bearer the ability to perform certain actions within a specific ecosystem. These tokens often enforce rights on-chain by interfacing directly with a protocol's contracts. The FCA goes on to state that “[utility] tokens grant holders access to a current or prospective product or service but do not grant holders rights that are the same as those granted by specified investments”.
 
-# Security Tokens
+### Security Tokens
 
 In recent years, there has been a growing interest in the use of blockchain for asset tokenisation. In particular, for “security tokens”. A security token is a unit of ownership recorded on the blockchain. Security tokens are distinct from unregulated tokens, such as exchange and utility tokens, in that they often represent asset value external to the blockchain that grant the holder rights enforced by the law. Such assets may include shares, bonds, and property, among others.
 
 Security tokens are typically classified based on whether they provide the same rights and obligations as traditional securities, and regulated based on their shared substantive properties. Importantly, for security tokens to be recognised and issued as such to investors, they must meet the requirements specified under applicable securities laws for similar fiat instruments. As security tokens sit within established regulatory frameworks, traditional issuers and investors can engage with much greater confidence. Security tokens are increasingly seen as an inevitable evolution of mainstream securities, as they provide many of the assurances and controls of traditional securities with enhanced transferability and settlement. Securities tokenisation is still a nascent space and has not yet seen large-scale adoption, but is likely to grow in the coming years. This growth will be driven by the significant advantages offered by the blockchain as well as by increasing institutional interest in the underlying technology. A number of major financial institutions, such as the Nasdaq, the New York Stock Exchange, and Goldman Sachs, have already invested in blockchain startups. Venture Capital investment in blockchain reached a record $33 billion in 2021 3 . In addition, a number of countries, including the United States, Canada, and the United Kingdom, are currently exploring the use of blockchain for securities tokenisation.
 
-### Benefits
+#### Benefits
 Tokenisation provides a powerful platform for issuers. With the blockchain providing a secure, transparent and tamper-proof means of record-keeping, security tokens present a number of advantages over traditional stock exchanges or asset registries.
 
-### Efficiency
+#### Efficiency
 Tokenised assets bypass the need for manual procedures as transactions are settled directly on the blockchain. This dramatically reduces settlement time and enables “24/7” trading, which is not possible via traditional exchanges.
 
 #### Cost
@@ -102,7 +59,6 @@ The blockchain creates a single record of truth that is independent and all part
 #### Composability
 Composability allows entire ecosystems of assets and protocols to work together synergistically. This means innovative new product offerings to be built atop existing ones, leveraging the resources made available by its predecessors and in turn, adding value to them.
 
-
 # Barriers to Adoption
 ** However, for security tokens to see wider adoption, there are a number of foundational issues that must be resolved.**
 
@@ -118,37 +74,24 @@ Intermediaries are opinionated. They conduct due diligence, endorse particular o
 #### Disconnected
 With centralised services the value offering is based on that of individual companies. Unlike DeFi services, security token platforms compete and scale like traditional businesses. This constrains the growth potential of the ecosystem based on the scalability of their internal procedures (e.g. due diligence, marketing, etc).
 
-
 Formalisation
-The legal and regulatory system has been slow to modernise in the
-wake of blockchain. Consequently, there is still a necessary “real
-world” foundation that is yet to be established.
+
+The legal and regulatory system has been slow to modernise in the wake of blockchain. Consequently, there is still a necessary “real world” foundation that is yet to be established.
+
 Compliant
-The vast majority of tokens are designed to be permissionless,
-meaning they can be exchanged freely. However, as with traditional
-securities, tokenised securities are still subject to regulation and
-required to conform to compliance standards. The only way to
-effectively scale regulated assets in decentralised markets is with
-adequate on-chain compliance controls.
+
+The vast majority of tokens are designed to be permissionless, meaning they can be exchanged freely. However, as with traditional securities, tokenised securities are still subject to regulation and required to conform to compliance standards. The only way to effectively scale regulated assets in decentralised markets is with adequate on-chain compliance controls.
+
 Secure
-Token issuers must also be able to perform more sophisticated
-management operations such as forcing token transfers for legal
-reasons or fund recovery, as well as freezing and partially freezing
-tokens.
+
+Token issuers must also be able to perform more sophisticated management operations such as forcing token transfers for legal reasons or fund recovery, as well as freezing and partially freezing tokens.
+
 Machine-readable
-Contracts, even in electronic form, legal agreements have failed to
-keep pace with advances in technology. In the current paradigm legal
-contracts are rendered in plain text via files such as Word documents
-or PDFs. Rather than creating a digital version of the underlying data,
-these documents are recorded in a digital format to capture important
-information in a convenient, transferable format. Without some type
-of aggregating framework that presents key information in a
-machine-readable format, it is extremely difficult for machines to
-work with the information contained within such files.
+
+Contracts, even in electronic form, legal agreements have failed to keep pace with advances in technology. In the current paradigm legal contracts are rendered in plain text via files such as Word documents or PDFs. Rather than creating a digital version of the underlying data, these documents are recorded in a digital format to capture important information in a convenient, transferable format. Without some type of aggregating framework that presents key information in a machine-readable format, it is extremely difficult for machines to work with the information contained within such files.
 
 # Hypershare
 In the same way that physical systems converge toward the path of least resistance, users naturally tend toward the solutions that offer the greatest convenience. For this reason, unlike its competitors, Hypershare has chosen to separate the notion of equity tokenisation from equity token offerings (“ETOs”). Asset tokenisation offers an array of benefits over contemporary solutions. However, it is by no means a simple process. Token issuance is still dependent on an array of actors such as advisors, law firms, broker-dealers, KYC/AML providers, custody agents, cap table management solutions, and more. Much like conventional crowdfunding campaigns, what is often perceived as a simple, effective form of alternative funding comes with its own set of drawbacks and considerations. While the concepts of equity tokens and equity token sales are highly interrelated, they are not mutually dependent. Whereas token sales are dependent on tokenisation of the underlying asset, tokenisation does not demand a blockchain-based public offering as its primary distribution method. ETOs are neither necessary nor appropriate for the majority of users and introduce a litany of regulatory and legal considerations that massively increase cost and complexity. As yet, there has not been a product that has realised digital equity to its full potential. It is our belief that tokenised equity, as a mature, digital-native asset, is more than viable as a standalone product. Therefore, Hypershare exclusively targets private, primary market transactions between issuers and accredited investors. By removing ETOs from the core product offering, issuing digital equity requires very little behavioural change or commitment on the part of users. Whereas tokenisation could easily take several months from end-to-end, without the regulatory and legal concerns that accompany large public crowdsales, issuers may start to see the benefits within as little as half an hour. Part of what makes Hypershare’s value offering so compelling is that it is so simple. Instead of manually sharing legal agreements in PDF form, signing them physically or with something like DocuSign, manually updating the shareholder register and issuing share certificates, Hypershare provides a sophisticated tool for both issuers and investment professionals to streamline their legal, administrative, and transactional activities into a single, integrated process.
-
 
 In this regard, Hypersurface creates a new digital utility, much like email or file sharing. One that we hope both issuers and investors will come to use on a daily basis. This utility offers what we believe to be a leading-edge solution, not just in the domain of asset tokenisation, but in creating blockchain-based applications for mainstream commercial adoption. 
 
@@ -160,8 +103,7 @@ From instant equity-backed loans to secondary markets trading and digital voting
 
 For a process that takes as little as half an hour, we see this as potentially the easiest way for an issuer to increase the value of an asset and the appeal of an investment opportunity.
 
-
-Tokenisation Process
+### Tokenisation Process
 
 1. Structuring
 Configure the basic details of the asset by defining its name, ticker, supply and more. Structure the asset type and build the legal agreement from a library of modules.
@@ -201,6 +143,7 @@ A unique feature of Hypershare is that it enforces compliance at the protocol le
 
 ## Advanced Issuer Controls
 Hypershare features a number of advanced issuer controls designed to facilitate effective and secure equity tokenisation. In order to do so it is essential that issuers are have options such as freezing assets, partially freezing assets, force transferring assets, and recovering assets for holders. To this end, Hypershare introduces a number of new functions allowing issuers to perform actions, including:
+
 ● pause/unpause
 ● recover
 ● unfreezePartialTokens/freezePartialTokens
@@ -212,10 +155,12 @@ Hypershare features a number of advanced issuer controls designed to facilitate 
 Hypershares functional logic may well see numerous upgrades throughout a company's life. To support upgradability, token accounting is separated from the underlying logic. This means that the overall state is maintained between upgrades.
 
 ## Non-fractional Shares
+
 Non-fractional shares introduce significant usability errors, particularly for services that are reliant on fractional fees, such as liquidity pools. Previous approaches to non-fractional shares simply set to the token to zero decimal places, as opposed to the conventional eighteen. The issue is that this design is hard to reverse once tokens are released. Instead, to support non-fractional shares Hypersurface simply enforces non-fractional token transfers. If a transfer creates fractional shares it will  fail.
 
 ## Metadata
-In order to give on-chain representation to real-world legal agreements, and do so in a way that is legally and cryptographically binding, the equity token contract must give equal precedent to legal agreements and the corresponding metadata. Hypershare makes use of the ERC-1155’s metadata URI to attach a structured JSON legal schema that provides information about the underlying agreement in a machine-readable format. For more information see regarding asset metadata see section 6.
+
+In order to give on-chain representation to real-world legal agreements, and do so in a way that is legally and cryptographically binding, the equity token contract must give equal precedent to legal agreements and the corresponding metadata. Hypershare makes use of the ERC-1155’s metadata URI to attach a structured JSON legal schema that provides information about the underlying agreement in a machine-readable format. For more information see regarding asset metadata see Hyperframe: Hyperlabs solution to a machine-readable legal system.  
 
 ## Share Register
 
@@ -247,19 +192,13 @@ The limit holder compliance smart contract enforces limit-based transfer control
 ### Claims Required
 The claims required compliance smart contract verifies that the receiver is either whitelisted and therefore exempt, or that the receiver has the appropriate claims to receive equity tokens. Instead of manually checking each interaction the compliance contracts can be used to define essential properties. Claims can be used to verify the properties of an account on-chain.
 
-# Hyperframe
-Legal and regulatory considerations have played an essential role in the shaping of the Hypersurface protocol. Needless to say, smart contracts are neither capable nor appropriate for all situations. When dealing with humans, “off-chain”, traditional legal agreements are still the most effective format for encoding such agreements. Business partners, employees, customers, investors and governments are all broadly recognised as stakeholders. However, if we define a stakeholder as "groups without whose support the organization would cease to exist", then arguably, computer systems are one of the most important stakeholder in almost every organisational and commercial process of the twenty-first century. But while we are heavily reliant on technology, the ability of such systems to interface with our current legal systems is extremely limited.
-
-Hyperframe is the final component of the Hypersurface protocol, it provides a way of creating “smart legal contracts” where some or all of the obligations are recorded, enforced, and executed automatically by a smart contract without human involvement and others are render in text and are the responsibility of humans to uphold. In the simplest sense, Hyperframe is a means of digitising legal agreements so that not only are they secure and accessible, but so they are machine-readable. Hyperframe provides a powerful mechanism to associate smart contracts with legally enforceable agreements that can be signed cryptographically and parsed by external machine systems, enabling search, analysis, and integration.
-
-We believe that this is one of the most important innovations introduced by Hypersurface. Not only does the protocol establish a strong, real-world legal foundation for users, allowing Hypersurface equity to function as a genuine digital asset (rather than a simple tokenised representation of an off-chain asset), but by providing information in a format that is machine-readable, Hyperframe opens up entirely new approaches to the management of contractual agreements and avenues for automation.
-
 ## Structure
 The metadata records the key terms contained within the agreement in a machine-readable format.
 The markdown records and captures the terms of the legal agreement in a human-readable format.
 A smart contract enforces the relevant the agreement on-chain.	
 
-Metadata
+## Metadata
+
 Hyperframe uses a metadata model to aggregate the key terms of an agreement in a machine-readable format. Providing metadata on the underlying agreement enables greatly enhanced flexibility. For Hypershare, metadata is embedded directly in the token URI and structured in much the same way as metadata for an NFT. This aggregates key information from the agreement and provides a way for agreement data to be indexed and utilised by third parties.
 
 	{

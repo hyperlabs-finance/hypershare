@@ -1,6 +1,6 @@
 <!-- 1. Merge Holders, Holders Delegates and Holders Frozen into a single HypershareRegister contract -->
 
-2. Error messages
+2. Error messages and requires as modifiers
 
 3. Ensure these fields are accessible in or via the HypershareRegister contract: Name, Address, Share class, Number of shares, Amount paid for shares, Date person was registered as a member, Date person ceased to be registered as a member
 

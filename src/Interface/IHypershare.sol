@@ -21,7 +21,13 @@ interface IHypershare is IERC1155 {
     function setCompliance(address compliance) external;
 	function setRegistry(address registry) external;
 
+    function mintGroup(address[] memory accounts, uint256 id, uint256[] memory amounts, bytes memory data) external;
+    function burnGroup(address[] memory accounts, uint256 id, uint256[] memory amounts) external;
     function mint(address account, uint256 id, uint256 amount, bytes memory data) external;
     function burn(address account, uint256 id, uint256 amount) external;
+
+    function newToken(uint256 shareholderLimit, uint256 shareholdingMinimum, bool shareholdingNonFractional) external returns (uint256);
+
+    function getTotalTokens() external view returns (uint256);
 
 }

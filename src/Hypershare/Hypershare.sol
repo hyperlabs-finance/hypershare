@@ -29,7 +29,7 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     ////////////////
 
     // Total tokens, incremented value used for token id
-    uint256 totalTokens;
+    uint256 _totalTokens;
 
     ////////////////
     // CONSTRUCTOR
@@ -72,7 +72,7 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = amount;
 
-        _beforeTokenTransfer(operator, from, to, ids, amounts, "");
+        _beforeTokenTransfer(operator, from, to, ids, amounts, "Hypershare: ");
 		return true;
 	}
 	
@@ -121,7 +121,7 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         _registry.toggleAddressFrozenAll(newWallet, _registry.checkFrozenAll(lostWallet));
     
         // For all tokens 
-        for (uint256 id = 0; id < totalTokens; id++) {
+        for (uint256 id = 0; id < _totalTokens; id++) {
             
             // If user has balance for tokens
             if (balanceOf(lostWallet, id) > 0) {
@@ -163,9 +163,9 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 	{
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
         if (address(_compliance) != address(0))
-            require(_compliance.checkCanTransferBatch(to, from, ids, amounts), "Accounts is not elligible to recieve shares.");
+            require(_compliance.checkCanTransferBatch(to, from, ids, amounts), "Hypershare: Accounts is not elligible to recieve shares.");
         if (address(_registry) != address(0))
-            require(_registry.checkCanTransferBatch(to, from, ids, amounts), "Exceeds holder transfer frozen");
+            require(_registry.checkCanTransferBatch(to, from, ids, amounts), "Hypershare: Exceeds holder transfer frozen");
 	}
 
 	// After transfer hook
@@ -181,12 +181,43 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 		override(ERC1155)
 	{
         if (address(_registry) != address(0))
-			require(_registry.batchTransferred(from, to, ids, amounts), "Could not update shareregistry with transfer");
+			require(_registry.batchTransferred(from, to, ids, amounts), "Hypershare: Could not update share registry with transfer");
 	}
 
     //////////////////////////////////////////////
     // MINT AND BURN 
     //////////////////////////////////////////////
+
+    // #TODO: Batch mint and burn
+    // Batch mint tokens
+    function mintGroup(
+        address[] memory accounts,
+        uint256 id,
+        uint256[] memory amounts,
+        bytes memory data
+    )
+        public
+        onlyOwner
+    {
+        require(accounts.length == amounts.length, "Hypershare: Accounts and amounts are not equal");
+        for (uint256 i = 0; i < accounts.length; i++) {
+            mint(accounts[i], id, amounts[i], data);
+        }
+    }
+    
+    function burnGroup(
+        address[] memory accounts,
+        uint256 id,
+        uint256[] memory amounts
+    )
+        public
+        onlyOwner
+    {
+        require(accounts.length == amounts.length, "Hypershare: Accounts and amounts are not equal");
+        for (uint256 i = 0; i < accounts.length; i++) {
+            burn(accounts[i], id, amounts[i]);
+        }
+    }
 
     // Mint tokens
     function mint(
@@ -198,6 +229,10 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         public
         onlyOwner
     {
+        // Sanity checks
+        require(account != address(0), "Hypershare: Cannot mint to zero address");
+        require(amount != 0, "Hypershare: Cannot mint to zero tokens");
+        
         // Burn
         _mint(account, id, amount, data);
 
@@ -205,6 +240,7 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         _registry.mint(account, id, amount);  
 
         // Event
+        // #TODO
     }
 
     // Burn tokens
@@ -223,6 +259,7 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         _registry.burn(account, id, amount);
 
         // Event
+        // #TODO
     }
 
     //////////////////////////////////////////////
@@ -230,12 +267,20 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     //////////////////////////////////////////////
 
     // Create token
-    function newToken()
+    function newToken(
+        uint256 shareholderLimit,
+        uint256 shareholdingMinimum,
+        bool shareholdingNonFractional
+    )
         public
         onlyOwner
+        returns (uint256)
     {
-        totalTokens++;
-        // #TODO
+        _totalTokens++;
+
+        _registry.newToken(_totalTokens, shareholderLimit, shareholdingMinimum, shareholdingNonFractional);
+
+        return _totalTokens;
     }
 
     //////////////////////////////////////////////
@@ -260,6 +305,20 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         onlyOwner
     {
         _registry = IHypershareRegistry(registry);
+    }
+
+    //////////////////////////////////////////////
+    // GETTERS
+    //////////////////////////////////////////////
+
+    // Get total tokesn
+
+    function getTotalTokens()
+        public
+        view 
+        returns (uint256)
+    {
+        return _totalTokens;
     }
 
 }

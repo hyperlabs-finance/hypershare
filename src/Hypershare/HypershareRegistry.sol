@@ -114,6 +114,7 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         for (uint256 i = 0; i < ids.length; i++) {
             require(transferred(from, to, ids[i], amounts[i]), "HypershareRegistry: Could not transfer");
         }
+        return true;
     } 
 
     // Update the cap table on transfer
@@ -213,7 +214,7 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
     )
         public
     {
-        if (address(from) != 0 && _shareholderIndices[id][from] != 0) {
+        if (from != address(0) && _shareholderIndices[id][from] != 0) {
             
             // If shareholder still has shares
             if (_share.balanceOf(from, id) > 0) {

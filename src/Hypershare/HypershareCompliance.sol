@@ -9,7 +9,16 @@ import '.././Interface/IHypershareCompliance.sol';
 // Calling
 import '.././Interface/IHyperbaseClaimRegistry.sol';
 
+// #TODO: sanity checks
+
 contract HypershareCompliance is IHypershareCompliance, Ownable {
+
+  	////////////////
+    // ERRORS
+    ////////////////
+
+    // Claim topic already exists
+    error TopicExists();
 
   	////////////////
     // INTERFACES
@@ -55,7 +64,7 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
     {
         // Sanity checks
         for (uint256 i = 0; i < _claimTopicsRequired[tokenId].length; i++) {
-            require(_claimTopicsRequired[tokenId][i] != claimTopic, "Claim topic already exists");
+            require(_claimTopicsRequired[tokenId][i] != claimTopic, TopicExists());
         }
 
         // Add topic 

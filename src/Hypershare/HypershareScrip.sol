@@ -9,6 +9,13 @@ import '../Interface/IHypershare.sol';
 
 contract Hyperwrap is ERC20, ERC1155Holder {
 
+  	////////////////
+    // ERRORS
+    ////////////////
+
+    // Token transfer invalid
+    error TransferInvalid();
+
     ////////////////
     // CONTRACT
     ////////////////
@@ -47,25 +54,17 @@ contract Hyperwrap is ERC20, ERC1155Holder {
     // METADATA
     //////////////////////////////////////////////
 
-    /**
-     * @dev See {IERC1155MetadataURI-uri}.
-     *
-     * This implementation returns the same URI for *all* token types. It relies
-     * on the token type ID substitution mechanism
-     * https://eips.ethereum.org/EIPS/eip-1155#metadata[defined in the EIP].
-     *
-     * Clients calling this function must replace the `\{id\}` substring with the
-     * actual token type ID.
-     */
-    function uri()
+    // Returns the address of the corresponding hypershare contract
+    function hypershare()
         public
         view
         virtual
-        returns (string memory)
+        returns (address)
     {
-        return _uri;
+        return address(_share);
     }
 
+    // Returns the token id for this wrapper token. Each wrapper is locked to a single token id
     function tokenId()
         public
         view
@@ -73,6 +72,16 @@ contract Hyperwrap is ERC20, ERC1155Holder {
         returns (uint256)
     {
         return _id;
+    }
+
+    // Returns the metadata uri for this wrapper token
+    function uri()
+        public
+        view
+        virtual
+        returns (string memory)
+    {
+        return _uri;
     }
 
     //////////////////////////////////////////////
@@ -103,7 +112,7 @@ contract Hyperwrap is ERC20, ERC1155Holder {
         public
     {
         // Require _share can transfer
-        require(_share.checkTransferIsValid(address(this), account, _id, amount), "Token transfer invalid");
+        require(_share.checkTransferIsValid(address(this), account, _id, amount), TransferInvalid());
         
         // Handle unwrap if done by third party
         if (msg.sender != account) {

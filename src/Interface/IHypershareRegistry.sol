@@ -3,19 +3,6 @@ pragma solidity ^0.8.6;
 
 interface IHypershareRegistry {
 
-    event NonFractional(address indexed account, uint256 token);
-    event Fractional(address indexed account, uint256 token);
-    event HolderLimitSetTransfer(uint256 _transferHoolderLimit, uint256 _id);
-    event MinimumShareholdingSet(uint256 id, uint256 minimumAmount);
-    
-    event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate, uint256 id);
-    event DelegateVotesChanged(address indexed delegate, uint256 indexed id, uint256 previousBalance, uint256 newBalance);
-
-    event RecoverySuccess(address lostWallet, address newWallet, address holderIdentity);
-    event AddressFrozen(address indexed account, bool indexed isFrozen, address indexed owner);
-    event SharesFrozen(address indexed account, uint256 amount);
-    event SharesUnfrozen(address indexed account, uint256 amount);
-    
     function batchTransferred(address from, address to, uint256[] memory ids, uint256[] memory amounts) external returns (bool);
     function transferred(address from, address to, uint256 id, uint256 amount) external returns (bool);
     
@@ -29,12 +16,14 @@ interface IHypershareRegistry {
     
 	function delegateTo(address from, address delegatee, uint256 id) external payable;
     
-    function freezeShares(address account, uint256 id, uint256 amount) external;
-    function updateUnfrozenShares(address from, uint256 id, uint256 amount) external;
+    function batchToggleAddressFrozenAll(address[] memory accounts, bool[] memory freeze) external;
     function toggleAddressFrozenAll(address account, bool freeze) external;
-    function toggleAddressFrozen(address account, uint256 id, bool freeze) external;
+    
     function batchToggleAddressFrozen(address[] memory accounts, uint256[] memory ids, bool[] memory freeze) external;
+    function toggleAddressFrozen(address account, uint256 id, bool freeze) external;
+
     function batchFreezeShares(address[] memory accounts, uint256[] memory ids, uint256[] memory amounts) external;
+    function freezeShares(address account, uint256 id, uint256 amount) external;
 
     function getHolderAt(uint256 index, uint256 id) external view returns (address);
     function getShareholderLimit(uint256 id) external view returns (uint256);

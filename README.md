@@ -108,7 +108,7 @@ For a process that takes as little as half an hour, we see this as potentially t
 Configure the basic details of the asset by defining its name, ticker, supply and more. Structure the asset type and build the legal agreement from a library of modules.
 
 2. Compliance
-Define the compliance rules for the asset. This includes: total holder limits, jurisdictional restrictions, jurisdictional holder limits, non-fractionality, non-transferability, and more. Any whitelisted addresses are exempt, otherwise, compliance rules are enforced at the protocol-level.
+Define the compliance rules for the asset. This includes: total holder limits, jurisdictional restrictions, jurisdictional holder limits, non-divisibleity, non-transferability, and more. Any whitelisted addresses are exempt, otherwise, compliance rules are enforced at the protocol-level.
 
 3. Creation
 Key information is encoded in a digital format. The token is deployed on the blockchain. Legal agreements are uploaded to IPFS.
@@ -153,9 +153,9 @@ Hypershare features a number of advanced issuer controls designed to facilitate 
 ## Upgradability
 Hypershares functional logic may well see numerous upgrades throughout a company's life. To support upgradability, token accounting is separated from the underlying logic. This means that the overall state is maintained between upgrades.
 
-## Non-fractional Shares
+## Non-divisible Shares
 
-Non-fractional shares introduce significant usability errors, particularly for services that are reliant on fractional fees, such as liquidity pools. Previous approaches to non-fractional shares simply set to the token to zero decimal places, as opposed to the conventional eighteen. The issue is that this design is hard to reverse once tokens are released. Instead, to support non-fractional shares Hypersurface simply enforces non-fractional token transfers. If a transfer creates fractional shares it will  fail.
+Non-divisible shares introduce significant usability errors, particularly for services that are reliant on divisible fees, such as liquidity pools. Previous approaches to non-divisible shares simply set to the token to zero decimal places, as opposed to the conventional eighteen. The issue is that this design is hard to reverse once tokens are released. Instead, to support non-divisible shares Hypersurface simply enforces non-divisible token transfers. If a transfer creates divisible shares it will  fail.
 
 ## Metadata
 
@@ -186,7 +186,7 @@ The compliance contracts provide an open, programmable means of automating compl
 For its initial release Hypersurface is targeting a set of rules and transfer controls that are universally applicable. However, as the protocol grows we hope to be able to add further fidelity to the compliance contracts, implementing new rules in accordance with jurisdictional requirements. With the development of the compliance contracts, we expect to see the emergence of greatly increased liquidity.
 
 ### Limit Holder
-The limit holder compliance smart contract enforces limit-based transfer controls, such as ensuring the maximum number of holders or specific jurisdictional limits have not been exceeded. Limit holder manages frozen tokens, wallets and ensures that tokens are not transferred while paused or in non fractional quantities if required.
+The limit holder compliance smart contract enforces limit-based transfer controls, such as ensuring the maximum number of holders or specific jurisdictional limits have not been exceeded. Limit holder manages frozen tokens, wallets and ensures that tokens are not transferred while paused or in non divisible quantities if required.
 
 ### Claims Required
 The claims required compliance smart contract verifies that the receiver is either whitelisted and therefore exempt, or that the receiver has the appropriate claims to receive equity tokens. Instead of manually checking each interaction the compliance contracts can be used to define essential properties. Claims can be used to verify the properties of an account on-chain.
@@ -216,7 +216,7 @@ Hyperframe uses a metadata model to aggregate the key terms of an agreement in a
 			"asset": {
 				"$class": "org.hypersurface.assets.ordinaryShare",
 				"shareFullyPaid": "True",
-				"shareFractional": "False",
+				"shareDivisible": "False",
 				"shareTransferLimit": "True",
 				"shareHolderLimit": "True",
 				"clauseId": "N234JKHKNM-8791-2146-AD7Y-8YRjgK24121L4K"

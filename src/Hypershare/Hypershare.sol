@@ -12,6 +12,8 @@ import "openzeppelin-contracts/contracts/access/Ownable.sol";
 import '../Interface/IHypershareCompliance.sol';
 import '../Interface/IHypershareRegistry.sol';
 
+// #TODO: burn and reissue
+
 contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 
     ////////////////
@@ -270,8 +272,6 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         emit SharesBurned(account, id, amount, data);
     }
 
-    // #TODO burn and reissue
-
     //////////////////////////////////////////////
     // CREATE NEW TOKEN
     //////////////////////////////////////////////
@@ -280,7 +280,7 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     function newToken(
         uint256 shareholderLimit,
         uint256 shareholdingMinimum,
-        bool shareholdingNonFractional
+        bool shareholdingNonDivisible
     )
         public
         onlyOwner
@@ -288,9 +288,9 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     {
         _totalTokens++;
 
-        _registry.newToken(_totalTokens, shareholderLimit, shareholdingMinimum, shareholdingNonFractional);
+        _registry.newToken(_totalTokens, shareholderLimit, shareholdingMinimum, shareholdingNonDivisible);
 
-        emit NewShareCreated(_totalTokens, shareholderLimit, shareholdingMinimum, shareholdingNonFractional);
+        emit NewShareCreated(_totalTokens, shareholderLimit, shareholdingMinimum, shareholdingNonDivisible);
 
         return _totalTokens;
     }

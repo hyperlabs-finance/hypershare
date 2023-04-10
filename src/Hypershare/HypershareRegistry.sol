@@ -11,76 +11,9 @@ import 'openzeppelin-contracts/contracts/access/Ownable.sol';
 import '../Interface/IHyperbaseIdentityRegistry.sol';
 import '../Interface/IHypershare.sol';
 
-// #TODO https://eips.ethereum.org/EIPS/eip-5805
+// #TODO Refactor shareholder limits for total across share types and intra-share limits + issuer total limits + issuer intra-share limit
 
-contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
-
-  	////////////////
-    // EVENTS
-    ////////////////
-
-    // Change to fractional status of share
-    event NonFractional(uint256 indexed token, bool indexed nonFractional);
-
-    // The maximum number of shareholders has been updated
-    event ShareholderLimitSet(uint256 holderLimit, uint256 id);
-
-    // The minimum amount of shares per shareholder
-    event MinimumShareholdingSet(uint256 id, uint256 minimumAmount);
-    
-    //  A shareholder has change their voting delegate for a share type
-    event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate, uint256 id);
-    
-    // 
-    event DelegateVotesChanged(address indexed delegate, uint256 indexed id, uint256 previousBalance, uint256 newBalance);
-    
-    event RecoverySuccess(address lostWallet, address newWallet, address holderIdentity);
-    
-    event AddressFrozen(address indexed account, bool indexed isFrozen, address indexed owner);
-    
-    event SharesFrozen(address indexed account, uint256 amount);
-
-    event SharesUnfrozen(address indexed account, uint256 amount);
-
-  	////////////////
-    // ERRORS
-    ////////////////
-
-    // Only callable by the Hypershare contract
-    error OnlyShareContract();
-    
-    // Only callable by the Hypershare contract or the Owner
-    error OnlyShareContractOrOwner();
-    
-    // Ids and amounts do not match
-    error UnequalAmountsIds();
-
-    // Could not transfer
-    error TransferFailed();
-
-    // ERC1155: accounts, ids and amounts length mismatch
-    error UnequalAccountsAmountsIds();
-
-    // Amount exceeds available balance
-    error ExceedsUnfrozenBalance();
-
-    // Account is frozen
-    error AccountFrozen();  
-
-    // Share type is frozen on this account
-    error FrozenSharesAccount();
-
-    // Transfer exceeds shareholder limit
-    error ExceedsMaximumShareholders();
-
-    //  Transfer results in shareholdings below minimum
-    error BelowMinimumShareholding();
-
-    // Transfer results in fractional shares
-    error FractionalShares();
-
-    // Shareholder doesn't exist
-    error ShareholderNotExist();
+contract HypershareRegistry is IHypershareRegistry, Ownable  {
 
     ////////////////
     // INTERFACES
@@ -96,8 +29,6 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
     // STATES
     ////////////////
 	
-    // SHAREHOLDERS
-    
     // Mapping from token ID to the addresses of all shareholders
     mapping(uint256 => address[]) public _shareholders;
 
@@ -113,17 +44,14 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
     // Mapping from token ID to minimum share holding, transfers that result in holdings that fall bellow the mininmum will fail 
     mapping(uint256 => uint256) public _shareholdingMinimum;
     
-    // Mapping from token ID to non-fractional bool, transfers that result in fractional holdings will fail
-    mapping(uint256 => bool) public _shareholdingNonFractional;
-
-    // Mapping from holder to mapping from token ID to delegate address 
-    mapping(address => mapping(uint256 => address)) internal _delegates;    
+    // Mapping from token ID to non-divisible bool, transfers that result in divisible holdings will fail
+    mapping(uint256 => bool) public _shareholdingNonDivisible;
 
     // Mapping from account address to bool for frozen y/n across all tokens
     mapping(address => bool) public _frozenAll;
 
     // Mapping from token ID to account address to bool for frozen y/n
-    mapping(uint256 => mapping(address => bool)) public _frozenAccounts;
+    mapping(uint256 => mapping(address => bool)) public _frozenShareType;
 
     // Mapping from token ID to mapping from account address to uint amount of shares frozen
 	mapping(uint256 => mapping(address => uint256)) public _frozenShares;
@@ -192,8 +120,6 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         onlyShare
         returns (bool)
     {
-        _checkpoint(_delegates[from][id], _delegates[to][id], id, amount);
-
         updateShareholders(to, id);
         pruneShareholders(from, id);
         updateUnfrozenShares(from, id, amount);
@@ -209,19 +135,19 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         uint256 id,
         uint256 shareholderLimit,
         uint256 shareholdingMinimum,
-        bool shareholdingNonFractional
+        bool shareholdingNonDivisible
     )
         public
         onlyShareOrOwner
     {
         setShareholderLimit(shareholderLimit, id);   
         setShareholdingMinimum(id, shareholdingMinimum);
-        setNonFractional(id);
+        setNonDivisible(id);
     }
     
     //////////////////////////////////////////////
     // MINT | BURN 
-    //////////////////////////////////////////////    
+    //////////////////////////////////////////////
 
     // Update the cap table on mint
     function mint(
@@ -235,7 +161,7 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         updateShareholders(to, id);
     }
     
-    // Burn tokens
+    // Update the cap table on burn
     function burn(
         address account,
         uint256 id,
@@ -246,8 +172,6 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
     {
         updateUnfrozenShares(account, id, amount); 
         pruneShareholders(account, id);  
-
-        // Event
     }
 
     //////////////////////////////////////////////
@@ -307,47 +231,17 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
             if (amount > freeBalance) {
                 uint256 tokensToUnfreeze = amount - (freeBalance);
                 _frozenShares[id][from] = _frozenShares[id][from] - (tokensToUnfreeze);
-                emit SharesUnfrozen(from, tokensToUnfreeze);
+                emit SharesUnfrozen(from, id, tokensToUnfreeze);
             }
         }
-    }
-
-    //////////////////////////////////////////////
-    // DELEGATE
-    //////////////////////////////////////////////
-
-    // Delegates voting power to an address
-    function delegateTo(
-        address from,
-        address delegatee,
-        uint256 id
-    )
-        external
-        payable
-        // #TODO
-    {
-        address currentDelegate = _delegates[from][id] ;
-
-        _delegates[from][id] = delegatee;
-
-        // Move delegates
-        _checkpoint(
-            currentDelegate,
-            delegatee,
-            id,
-            _share.balanceOf(from, id)
-        );
-
-        // Event
-        emit DelegateChanged(from, currentDelegate, delegatee, id);
     }
 
     //////////////////////////////////////////////
     // FREEZE | UNFREEZE
     //////////////////////////////////////////////
 
-    // Set a batch of addresses to frozen
-    function batchToggleAddressFrozenAll(
+    // Set a batch of addresses to frozen all
+    function batchSetFrozenAll(
         address[] memory accounts,
         bool[] memory freeze
     )
@@ -355,12 +249,12 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         onlyShareOrOwner 
     {
         for (uint256 i = 0; i < accounts.length; i++) {
-            toggleAddressFrozenAll(accounts[i], freeze[i]);
+            setFrozenAll(accounts[i], freeze[i]);
         }
     }
 
-    // #TODO: desc
-    function toggleAddressFrozenAll(
+    // Freeze all interactions on an account
+    function setFrozenAll(
         address account,
         bool freeze
     )
@@ -371,11 +265,11 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         _frozenAll[account] = freeze;
 
         // Events
-        emit AddressFrozen(account, freeze, msg.sender);
+        emit UpdateFrozenAll(account, freeze);
     }
 
     // Set a batch of addresses to frozen
-    function batchToggleAddressFrozen(
+    function batchSetFrozenShareType(
         address[] memory accounts,
         uint256[] memory ids,
         bool[] memory freeze
@@ -384,12 +278,12 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         onlyShareOrOwner
     {
         for (uint256 i = 0; i < accounts.length; i++) {
-            toggleAddressFrozen(accounts[i], ids[i], freeze[i]);
+            setFrozenShareType(accounts[i], ids[i], freeze[i]);
         }
     }
     
     // Set an address to frozen
-    function toggleAddressFrozen(
+    function setFrozenShareType(
         address account,
         uint256 id,
         bool freeze
@@ -397,10 +291,10 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         public
         onlyShareOrOwner 
     {
-        _frozenAccounts[id][account] = freeze;
+        _frozenShareType[id][account] = freeze;
 
         // Event
-        // #TODO
+        emit UpdateFrozenShareType(account, id, freeze);
     }
 
     // Freeze a portion of shares for a batch of accounts
@@ -427,7 +321,7 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
     {
         require((_frozenShares[id][account] + amount) <= _share.balanceOf(account, id), ExceedsUnfrozenBalance());
         _frozenShares[id][account] = _frozenShares[id][account] + (amount);
-        emit SharesFrozen(account, amount);
+        emit SharesFrozen(account, id, amount);
     }
 
     //////////////////////////////////////////////
@@ -450,7 +344,7 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         return true;
     }
     
-    // Return bool if the transfer passes share
+    // Return bool if the transfer passes
     function checkCanTransfer(
         address to,
         address from,
@@ -462,11 +356,11 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         returns (bool)
     {
         require(checkIsNotFrozenAllTransfer(from, to), AccountFrozen());
-        require(checkIsNotFrozenAccountsTransfer(id, from, to), FrozenSharesAccount());
+        require(checkIsNotFrozenShareTypeTransfer(id, from, to), FrozenSharesAccount());
         require(checkIsNotFrozenSharesTransfer(amount, id, from), ExceedsUnfrozenBalance());
         require(checkIsWithinShareholderLimit(id), ExceedsMaximumShareholders());
         require(checkIsAboveMinimumShareholdingTransfer(to, from, id, amount), BelowMinimumShareholding());
-        require(checkIsNonFractionalTransfer(to, from, id, amount), FractionalShares());
+        require(checkIsNonDivisibleTransfer(to, from, id, amount), ShareDivision());
 
         return true;
     }
@@ -519,7 +413,7 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
     }
 
     // #TODO desc
-    function checkIsNonFractionalTransfer(
+    function checkIsNonDivisibleTransfer(
         address to,
         address from,
         uint256 id,
@@ -530,22 +424,22 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         returns (bool)
     {   
 
-        if (_shareholdingNonFractional[id]) {
+        if (_shareholdingNonDivisible[id]) {
             // Standard transfer
             if (from != address(0) && to != address(0)) 
-                if (checkIsNonFractional(_share.balanceOf(to, id) - amount) && checkIsNonFractional(_share.balanceOf(from, id) + amount))
+                if (checkIsNonDivisible(_share.balanceOf(to, id) - amount) && checkIsNonDivisible(_share.balanceOf(from, id) + amount))
                     return true;
                 else
                     return false;    
             // Mint
             else if (from == address(0) && to != address(0))
-                if (checkIsNonFractional(_share.balanceOf(to, id) + amount))
+                if (checkIsNonDivisible(_share.balanceOf(to, id) + amount))
                     return true;
                 else
                     return false;
             // Burn
             else if (from != address(0) && to == address(0))
-                if (checkIsNonFractional(_share.balanceOf(from, id) - amount))
+                if (checkIsNonDivisible(_share.balanceOf(from, id) - amount))
                     return true;
                 else
                     return false;
@@ -572,7 +466,7 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
     }
     
     // Return bool address and tokens are not frozen for token id
-    function checkIsNotFrozenAccountsTransfer(
+    function checkIsNotFrozenShareTypeTransfer(
         uint256 id,
         address from,
         address to
@@ -581,7 +475,7 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         view
         returns (bool)
     {
-        if (!_frozenAccounts[id][to] && !_frozenAccounts[id][from])
+        if (!_frozenShareType[id][to] && !_frozenShareType[id][from])
             return true;  
         else
             return false;  
@@ -620,7 +514,7 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
     }
 
     // Return bool that modulus of the transfer amount is equal to one (with the standard eighteen decimal places) 
-    function checkIsNonFractional(
+    function checkIsNonDivisible(
         uint256 amount
     )
         public
@@ -633,7 +527,7 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
             return false;
     }
 
-    // #TODO desc
+    // Checks value exceeds minimum shareholding
     function checkIsAboveMinimumShareholding(
         uint256 id,
         uint256 amount
@@ -652,7 +546,7 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
     // SETTERS
     //////////////////////////////////////////////
 
-    // #TODO: desc
+    // Sets the hypershare contract
     function setShare(
         address share
     )
@@ -662,7 +556,7 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         _share = IHypershare(share);
     }
 
-    // Sets the holder limit as required for share purpose for transferees
+    // Sets the holder limit
     function setShareholderLimit(
         uint256 holderLimit,
         uint256 id
@@ -670,6 +564,8 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         public
         onlyShareOrOwner
     {
+        require(_shareholders.length < holderLimit, limitLessThanCurrentShareholders());
+        
         // Set holder limit
         _shareholderLimit[id] = holderLimit;
 
@@ -694,27 +590,27 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
 
     // WARNING! This is extremely hard to reverse
     // Toggle transfers that are not modulus zero e18
-    function setNonFractional(
+    function setNonDivisible(
         uint256 id
     )
         public
         onlyShareOrOwner 
     {
-        if (!_shareholdingNonFractional[id]) {
+        if (!_shareholdingNonDivisible[id]) {
             
-            // Set fractionality
-            _shareholdingNonFractional[id] = true;
+            // Set divisibleity
+            _shareholdingNonDivisible[id] = true;
 
             // Event
-            emit NonFractional(id, true);
+            emit NonDivisible(id, true);
         }
-        else if (_shareholdingNonFractional[id]) {
+        else if (_shareholdingNonDivisible[id]) {
             
-            // Set fractionality
-            _shareholdingNonFractional[id] = false;
+            // Set divisibleity
+            _shareholdingNonDivisible[id] = false;
 
             // Event
-            emit NonFractional(id, false);
+            emit NonDivisible(id, false);
         }
     }
 
@@ -722,9 +618,7 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
     // GETTERS
     //////////////////////////////////////////////
 
-    // SHAREHOLDERS
-
-    // #TODO desc
+    // Gets address of shareholder by index
     function getHolderAt(
         uint256 index,
         uint256 id
@@ -782,126 +676,15 @@ contract HypershareRegistry is IHypershareRegistry, Checkpoint, Ownable  {
         return _shareholdingMinimum[id];
     }
 
-// Returns bool y/n share type is non-fractional 
-    function getNonFractional(
+    // Returns bool y/n share type is non-divisible 
+    function getNonDivisible(
         uint256 id
     )
         public
         view
         returns (bool)
     {
-        return _shareholdingNonFractional[id];
+        return _shareholdingNonDivisible[id];
     }
-
-    // DELEGATES
-
-    // #TODO desc
-    function getDelegates(
-        address account,
-        uint256 id
-    )
-        public
-        view
-        returns (address)
-    {
-        address current = _delegates[account][id];
-
-        return
-            current == address(0) 
-                ? account 
-                : current;
-    }
-    
-    // #TODO desc
-    function getCurrentVotes(
-        address account,
-        uint256 id
-    )
-        public
-        view
-        returns (uint256)
-    {
-        uint256 nCheckpoints = _numCheckpoints[account][id];
-
-        return
-            nCheckpoints != 0
-                ? _checkpoints[account][id][nCheckpoints - 1].shares
-                : 0;
-    }
-
-    // #TODO desc
-    function getPriorVotes(
-        address account,
-        uint256 id,
-        uint256 timestamp
-    )
-        public
-        view
-        returns (uint256)
-    {
-        require(block.timestamp <= timestamp, ""); // #TODO
-
-        uint256 nCheckpoints = _numCheckpoints[account][id];
-
-        if (nCheckpoints == 0) return 0;
-
-        // Won't underflow because decrement only occurs if positive `nCheckpoints`.
-        unchecked {
-            uint256 prevCheckpoint = nCheckpoints - 1;
-            
-            if (
-                _checkpoints[account][id][prevCheckpoint].fromTimestamp <=
-                timestamp
-            ) return _checkpoints[account][id][prevCheckpoint].shares;
-
-            if (_checkpoints[account][id][0].fromTimestamp > timestamp) return 0;
-
-            uint256 lower;
-
-            uint256 upper = prevCheckpoint;
-
-            while (upper > lower) {
-                uint256 center = upper - (upper - lower) / 2;
-
-                Checkpoint memory cp = _checkpoints[account][id][center];
-
-                if (cp.fromTimestamp == timestamp) {
-                    return cp.shares;
-                } else if (cp.fromTimestamp < timestamp) {
-                    lower = center;
-                } else {
-                    upper = center - 1;
-                }
-            }
-
-            return _checkpoints[account][id][lower].shares;
-        }
-    }
-
-    // FROZEN
-    
-    // Return frozen shares 
-    function getFrozenShares(
-        address account,
-        uint256 id
-    )
-        public
-        view
-        returns (uint256)
-    {
-        return _frozenShares[id][account];
-    }
-
-    // Return frozen accounts 
-    function getFrozenAccounts(
-        address account,
-        uint256 id
-    )
-        public
-        view
-        returns (bool)
-    {
-        return _frozenAccounts[id][account];
-    }
-    
+   
 }

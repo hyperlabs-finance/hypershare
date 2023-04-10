@@ -71,12 +71,12 @@ contract HypershareTest is Test {
 
         uint256 _maxNoShareholders = 5;
         uint256 _minimumShareholding = 5 ether;
-        bool _shareholdingNonFractional = true;
+        bool _shareholdingNonDivisible = true;
         
         _hypershare.newToken(
             _maxNoShareholders,
 		    _minimumShareholding,
-            _shareholdingNonFractional
+            _shareholdingNonDivisible
 	    );
 
         uint256 id = startingTokens + 1;
@@ -84,7 +84,7 @@ contract HypershareTest is Test {
         assertTrue(_hypershare.getTotalTokens() == id, "testNewToken: incorrect token id");
         assertTrue(_registry.getShareholderLimit(id) == _maxNoShareholders, "testNewToken: incorrect: _maxNoShareholders");
         assertTrue(_registry.getShareholdingMinimum(id) == _minimumShareholding, "testNewToken: incorrect: _minimumShareholding");
-        assertTrue(_registry.getNonFractional(id) == _shareholdingNonFractional, "testNewToken: incorrect: _shareholdingNonFractional");
+        assertTrue(_registry.getNonDivisible(id) == _shareholdingNonDivisible, "testNewToken: incorrect: _shareholdingNonDivisible");
 
     }
     
@@ -229,7 +229,7 @@ contract HypershareTest is Test {
     // require(checkIsNotFrozenSharesTransfer(amount, id, from), "HypershareRegistry: Insufficient unfrozen Balance");
     // require(checkIsWithinShareholderLimit(id), "HypershareRegistry: Transfer exceeds shareholder limit");
     // require(checkIsAboveMinimumShareholdingTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in shareholdings below minimum");
-    // require(checkIsNonFractionalTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in fractional shares");
+    // require(checkIsNonDivisibleTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in divisible shares");
 
     */
 }

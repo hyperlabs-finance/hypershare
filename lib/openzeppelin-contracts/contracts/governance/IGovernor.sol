@@ -96,7 +96,7 @@ abstract contract IGovernor is IERC165 {
      * If a counting module makes use of encoded `params`, it should  include this under a `params` key with a unique
      * name that describes the behavior. For example:
      *
-     * - `params=fractional` might refer to a scheme where votes are divided fractionally between for/against/abstain.
+     * - `params=divisible` might refer to a scheme where votes are divided divisiblely between for/against/abstain.
      * - `params=erc721` might refer to a scheme where specific NFTs are delegated to vote.
      *
      * NOTE: The string can be decoded by the standard

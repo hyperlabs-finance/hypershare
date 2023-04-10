@@ -33,7 +33,7 @@ def main():
 		10,
 		#shareholdingMinimum
 		5000000000000000000,
-		#shareholdingNonFractional
+		#shareholdingNonDivisible
 		True
 	)
 	# tx.wait(1)

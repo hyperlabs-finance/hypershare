@@ -14,13 +14,6 @@ import '.././Interface/IHyperbaseClaimRegistry.sol';
 contract HypershareCompliance is IHypershareCompliance, Ownable {
 
   	////////////////
-    // ERRORS
-    ////////////////
-
-    // Claim topic already exists
-    error TopicExists();
-
-  	////////////////
     // INTERFACES
     ////////////////
 
@@ -42,11 +35,9 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
     ////////////////
 
     constructor(
-        address claims,
-        address claimVerifiers
+        address claims
     ) {
-        _claimRegistry = IHyperbaseClaimRegistry(claims);
-        emit claimRegistrySet(claims);
+        setClaimRegistry(claims);
     }
 
     //////////////////////////////////////////////
@@ -71,7 +62,7 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
         _claimTopicsRequired[tokenId].push(claimTopic);
 
         // Event
-        emit claimTopicAdded(claimTopic, tokenId);
+        emit AddedClaimTopic(claimTopic, tokenId);
     }
 
     // Remove claim topic required of holders
@@ -87,8 +78,8 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
         for (uint256 i = 0; i < _claimTopicsRequired[tokenId].length; i++) {
             if (_claimTopicsRequired[tokenId][i] == claimTopic) {
                 _claimTopicsRequired[tokenId][i] = _claimTopicsRequired[tokenId][_claimTopicsRequired[tokenId].length - 1];
-                _claimTopicsRequired[tokenId].pop();
-                emit claimTopicRemoved(claimTopic, tokenId);
+                _claimTopicsRequired[tRemoved a claim topicokenId].pop();
+                emit RemovedClaimTopic(claimTopic, tokenId);
                 break;
             }
         }
@@ -130,13 +121,14 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
         onlyOwner
     {
         _claimRegistry = IHyperbaseClaimRegistry(claims);
-        emit claimRegistrySet(claims);
+        emit UpdatedClaimRegistry(claims);
     }
     
     //////////////////////////////////////////////
     // CHECKS
     //////////////////////////////////////////////
     
+    // Checks the elligibility of batch transfer
     function checkCanTransferBatch(
         address from,
         address to,
@@ -155,7 +147,7 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
         return true;
     }
     
-    // Iterates through the claims comparing them to the Accounts to ensure the reciever has all of the appropriate claims
+    // Checks the elligibility of a reciever 
     function checkRecieverIsElligible(
         address account,
         uint256 tokenId
@@ -198,6 +190,7 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
     // GETTERS
     //////////////////////////////////////////////
 
+    // Returns required claims for token
     function getClaimTopicsRequired(
         uint256 tokenId
     )

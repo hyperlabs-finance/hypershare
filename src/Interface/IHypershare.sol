@@ -35,7 +35,7 @@ interface IHypershare is IERC1155 {
     error MintZeroTokens();
 
     ////////////////
-    // ERRORS
+    // EVENTS
     ////////////////
     
     // Added or updated the shareholder registry
@@ -48,7 +48,7 @@ interface IHypershare is IERC1155 {
     event RecoverySuccess(address indexed lostWallet, address indexed newWallet);
 
     // New share type creation
-    event NewShareCreated(uint256 indexed id, uint256 indexed shareholderLimit, uint256 indexed shareholdingMinimum, bool indexed shareholdingNonFractional);
+    event NewShareCreated(uint256 indexed id, uint256 indexed shareholderLimit, uint256 indexed shareholdingMinimum, bool indexed shareholdingNonDivisible);
 
     // Shares issuance
     event SharesIsssued(address indexed account, uint256 indexed id,uint256 indexed amount, bytes indexed data);
@@ -93,7 +93,7 @@ interface IHypershare is IERC1155 {
     //////////////////////////////////////////////
 
     // Owner function to create a new share type. Increments token count and updates the registry.
-    function newToken(uint256 shareholderLimit, uint256 shareholdingMinimum, bool shareholdingNonFractional) external returns (uint256);
+    function newToken(uint256 shareholderLimit, uint256 shareholdingMinimum, bool shareholdingNonDivisible) external returns (uint256);
 
     //////////////////////////////////////////////
     // SETTERS

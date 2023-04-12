@@ -2,9 +2,7 @@
 
 <!-- Error messages -->
 
-Events
-
-Repeated require statements as modifiers
+<!-- Events -->
 
 Ensure these fields are accessible in or via the HypershareRegister contract: Name, Address, Share class, Number of shares, Amount paid for shares, Date person was registered as a member, Date person ceased to be registered as a member
 

@@ -39,29 +39,29 @@ interface IHypershare is IERC1155 {
     ////////////////
     
     // Added or updated the shareholder registry
-    event HypershareRegistryUpdated(address indexed registry);  
+    event UpdatedHypershareRegistry(address indexed registry);  
 
     // Added or updated the compliance claims contract
-    event HypershareComplianceUpdated(address indexed compliance);  
+    event UpdatedHypershareCompliance(address indexed compliance);  
     
     // Successful or transfer or shares to new investor wallet
     event RecoverySuccess(address indexed lostWallet, address indexed newWallet);
 
     // New share type creation
-    event NewShareCreated(uint256 indexed id, uint256 indexed shareholderLimit, uint256 indexed shareholdingMinimum, bool indexed shareholdingNonDivisible);
+    event NewToken(uint256 indexed id, uint256 shareholderLimit, uint256 shareholdingMinimum, bool shareholdingNonDivisible);
 
-    // Shares issuance
-    event SharesIsssued(address indexed account, uint256 indexed id,uint256 indexed amount, bytes indexed data);
+    // Share issuance
+    event MintTokens(address indexed account, uint256 indexed id, uint256 amount, bytes indexed data);
 
     // Shares burned
-    event SharesBurned(address indexed account, uint256 indexed id,uint256 indexed amount, bytes indexed data);
+    event BurnTokens(address indexed account, uint256 indexed id, uint256 amount, bytes indexed data);
     
     //////////////////////////////////////////////
     // TRANSFERS
     //////////////////////////////////////////////
 
     // Pre-validates the elligibility of a share transfer via token balances and compliance
-    function checkTransferIsValid(address from, address to, uint256 id, uint256 amount) external returns (bool);
+    function checkTransferIsValid(address from, address to, uint256 id, uint256 amount, bytes memory data) external returns (bool);
 
     // Owner function to force a bathc of share transfers between two parties    
     function forcedBatchTransferFrom(address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) external;
@@ -80,7 +80,7 @@ interface IHypershare is IERC1155 {
     function mintGroup(address[] memory accounts, uint256 id, uint256[] memory amounts, bytes memory data) external;
     
     // Burns shares from a group of shareholders. Not to be confused with mintBatch as only takes single token id.
-    function burnGroup(address[] memory accounts, uint256 id, uint256[] memory amounts) external;
+    function burnGroup(address[] memory accounts, uint256 id, uint256[] memory amounts, bytes memory data) external;
 
     // Mints shares to account
     function mint(address account, uint256 id, uint256 amount, bytes memory data) external;

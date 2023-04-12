@@ -29,7 +29,7 @@ contract HypershareTest is Test {
         // Get utils
         _utils = new Utils();
 
-        generateShareholdersAndShares();
+        generateShareholdersAndShares(); // #TODO: Make dynamic
 
         // Set up contracts
         _hypershare = new Hypershare(
@@ -48,22 +48,15 @@ contract HypershareTest is Test {
     }
 
     function generateShareholdersAndShares() public {
-        
+
         // Create testing payees
         _shareholders = _utils.createUsers(_noShareholders);
 
-        delete _shares;
-
-        uint256[] memory _shares = new uint256[](_noShareholders);
-        
         // For number of payees give each a share of 1
         for (uint256 i = 0; i < _noShareholders; i++)
             _shares.push(100 ether);
 
     }
-
-
-    /*
 
     function testNewToken() public {
         
@@ -71,12 +64,12 @@ contract HypershareTest is Test {
 
         uint256 _maxNoShareholders = 5;
         uint256 _minimumShareholding = 5 ether;
-        bool _shareholdingNonDivisible = true;
+        bool _shareholdingNonFractional = true;
         
         _hypershare.newToken(
             _maxNoShareholders,
 		    _minimumShareholding,
-            _shareholdingNonDivisible
+            _shareholdingNonFractional
 	    );
 
         uint256 id = startingTokens + 1;
@@ -84,13 +77,13 @@ contract HypershareTest is Test {
         assertTrue(_hypershare.getTotalTokens() == id, "testNewToken: incorrect token id");
         assertTrue(_registry.getShareholderLimit(id) == _maxNoShareholders, "testNewToken: incorrect: _maxNoShareholders");
         assertTrue(_registry.getShareholdingMinimum(id) == _minimumShareholding, "testNewToken: incorrect: _minimumShareholding");
-        assertTrue(_registry.getNonDivisible(id) == _shareholdingNonDivisible, "testNewToken: incorrect: _shareholdingNonDivisible");
+        // assertTrue(_registry.checkNonFractional(id) == _shareholdingNonFractional, "testNewToken: incorrect: _shareholdingNonFractional");
 
     }
     
     function testMintGroup() public {
 
-        generateShareholdersAndShares();
+        assertTrue(_shareholders.length == _shares.length);
 
         uint256 id = _hypershare.getTotalTokens();
                 
@@ -105,12 +98,8 @@ contract HypershareTest is Test {
             assertTrue(_hypershare.balanceOf(_shareholders[i], id) == _shares[i] && _shares[i] != 0, "testMintGroup: incorrect shares");
 
     }
-
-    // #TODO: testMint
     
     function testSafeTransferFrom() public {
-
-        generateShareholdersAndShares();
 
         testMintGroup();
 
@@ -131,11 +120,9 @@ contract HypershareTest is Test {
 
     function testSafeTransferFrom_failFromAddressFrozenAll() public {
 
-        generateShareholdersAndShares();
-
         testMintGroup();
 
-        _registry.toggleAddressFrozenAll(_shareholders[0], true);
+        _registry.setFrozenAll(_shareholders[0], true);
 
         uint256 startBalance = _hypershare.balanceOf(_shareholders[1], 0);
 
@@ -155,11 +142,9 @@ contract HypershareTest is Test {
 
     function testSafeTransferFrom_failFromAddressFrozen() public {
 
-        generateShareholdersAndShares();
-
         testMintGroup();
 
-        _registry.toggleAddressFrozen(_shareholders[0], _hypershare.getTotalTokens(), true);
+        _registry.setFrozenShareType(_hypershare.getTotalTokens(), _shareholders[0], true);
 
         uint256 startBalance = _hypershare.balanceOf(_shareholders[1], 0);
 
@@ -177,8 +162,6 @@ contract HypershareTest is Test {
     }
 
     function testSafeTransferFrom_failFrozenShares() public {
-        
-        generateShareholdersAndShares();
         
         testMintGroup();
         
@@ -217,7 +200,7 @@ contract HypershareTest is Test {
     function testSafeTransferFrom_failMaximumShareholders() public {
         
         _noShareholders = 10;
-
+        
         generateShareholdersAndShares();
 
         console.log(_shareholders.length);
@@ -226,10 +209,12 @@ contract HypershareTest is Test {
         
     }
 
-    // require(checkIsNotFrozenSharesTransfer(amount, id, from), "HypershareRegistry: Insufficient unfrozen Balance");
-    // require(checkIsWithinShareholderLimit(id), "HypershareRegistry: Transfer exceeds shareholder limit");
-    // require(checkIsAboveMinimumShareholdingTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in shareholdings below minimum");
-    // require(checkIsNonDivisibleTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in divisible shares");
+    /*
+    
+        require(checkIsNotFrozenSharesTransfer(amount, id, from), "HypershareRegistry: Insufficient unfrozen Balance");
+        require(checkIsWithinShareholderLimit(id), "HypershareRegistry: Transfer exceeds shareholder limit");
+        require(checkIsAboveMinimumShareholdingTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in shareholdings below minimum");
+        require(checkIsNonFractionalTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in fractional shares");
 
     */
 }

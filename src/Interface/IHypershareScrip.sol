@@ -4,7 +4,7 @@ pragma solidity ^0.8.6;
 
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
-contract IHypershareScrip is IERC20 {
+interface IHypershareScrip is IERC20 {
 	
   	////////////////
     // ERRORS
@@ -12,6 +12,9 @@ contract IHypershareScrip is IERC20 {
 
     // Token transfer invalid
     error TransferInvalid();
+
+	// Burn amount exceeds allowance
+	error BurnExceedAllowance();
 
   	////////////////
     // EVENTS
@@ -28,22 +31,22 @@ contract IHypershareScrip is IERC20 {
     //////////////////////////////////////////////
     
     // Deposit erc-1155 hyperhshare tokens into the contract and recieve minted erc-20 scrip tokens for use in defi
-    function wrapTokens(address account, uint256 amount) public;
+    function wrapTokens(address account, uint256 amount) external;
 
     // Burn erc-20 and recieve the underlying hypershare tokens
-    function unWrapTokens(address account,  uint256 amount) public;
+    function unWrapTokens(address account,  uint256 amount) external;
 
     //////////////////////////////////////////////
     // GETTERS
     //////////////////////////////////////////////
 
     // Returns the address of the corresponding hypershare contract
-    function getHypershare() public view virtual returns (address);
+    function getHypershare() external view returns (address);
 
     // Returns the token id for this wrapper token. Each wrapper is locked to a single token id
-    function getTokenId() public view virtual returns (uint256);
+    function getTokenId() external view returns (uint256);
 
     // Returns the metadata uri for this wrapper token
-    function uri() public view virtual returns (string memory);
+    function uri() external view returns (string memory);
 
 }

@@ -44,7 +44,7 @@ interface IHypershareRegistry {
     error ShareholderNotExist();
 
     // Update to shareholder limit is less than the current amount of shareholders
-    limitLessThanCurrentShareholders()
+    error LimitLessThanCurrentShareholders();
 
   	////////////////
     // EVENTS
@@ -54,22 +54,28 @@ interface IHypershareRegistry {
     event NonDivisible(uint256 indexed token, bool indexed nonDivisible);
 
     // The maximum number of shareholders has been updated
-    event ShareholderLimitSet(uint256 holderLimit, uint256 id);
+    event ShareholderLimitSet(uint256 indexed id, uint256 holderLimit);
 
     // The minimum amount of shares per shareholder
-    event MinimumShareholdingSet(uint256 id, uint256 minimumAmount);
+    event MinimumShareholdingSet(uint256 indexed id, uint256 minimumAmount);
     
     // The account has been frozen or unfrozen
     event UpdateFrozenAll(address indexed account, bool indexed freeze);
 
     // All transfers of share type have been frozen or unfrozen on account
-    event UpdateFrozenShareType(address indexed account, uint256 indexed id, bool indexed freeze);
+    event UpdateFrozenShareType(uint256 indexed id, address indexed account, bool indexed freeze);
 
     // An amount of shares have been frozen on the account
-    event SharesFrozen(address indexed account, uint256 indexed id, uint256 amount);
+    event SharesFrozen(uint256 indexed id, address indexed account, uint256 amount);
 
     // An amount of shares have been unfrozen on the account
-    event SharesUnfrozen(address indexed account, uint256 indexed id, uint256 amount);
+    event SharesUnfrozen(uint256 indexed id, address indexed account, uint256 amount);
+
+    // Added or updated the Hypershare contract
+    event UpdatedHypershare(address indexed share);
+
+    // Added or updated the Identity registry contract
+    event UpdatedHyperbaseIdentityregistry(address indexed identity);
 
     //////////////////////////////////////////////
     // TRANSFER FUNCTIONS
@@ -119,16 +125,16 @@ interface IHypershareRegistry {
     function setFrozenAll(address account, bool freeze) external;
     
     // Freeze a batch of accounts from taking actions on a specific share type 
-    function batchSetFrozenShareType(address[] memory accounts, uint256[] memory ids, bool[] memory freeze) external;
+    function batchSetFrozenShareType(uint256[] memory ids, address[] memory accounts, bool[] memory freeze) external;
 
     // Freeze all actions for an account of a specific share type
-    function setFrozenShareType(address account, uint256 id, bool freeze) external;
+    function setFrozenShareType(uint256 id, address account, bool freeze) external;
 
     // Freeze a specific amount of shares for a batch of accounts
-    function batchFreezeShares(address[] memory accounts, uint256[] memory ids, uint256[] memory amounts) external;
+    function batchFreezeShares(uint256[] memory ids, address[] memory accounts, uint256[] memory amounts) external;
 
     // Freeze a specific amount of share on an account
-    function freezeShares(address account, uint256 id, uint256 amount) external;
+    function freezeShares(uint256 id, address account, uint256 amount) external;
 
     //////////////////////////////////////////////
     // CHECKS
@@ -180,7 +186,7 @@ interface IHypershareRegistry {
     // Sets the minimum shareholding on transfers
     function setShareholdingMinimum(uint256 id, uint256 minimumAmount) external;
 
-    // Toggle transfers that are not modulus zero e18
+    // Set transfers that are not modulus zero e18
     function setNonDivisible(uint256 id) external;
     
     //////////////////////////////////////////////
@@ -204,5 +210,8 @@ interface IHypershareRegistry {
 
     // Returns whether the token is non divisible or not by token id
     function getNonDivisible(uint256 id) external view returns (bool);
+
+    // Returns the amount of shares frozen for an account by token id and address
+    function getFrozenShares(address account, uint256 id) external view returns (uint256);
 
 }

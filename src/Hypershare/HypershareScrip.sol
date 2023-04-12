@@ -57,7 +57,7 @@ contract HypershareScrip is IHypershareScrip, ERC20, ERC1155Holder {
         public
     {
         // Handle deposit of ERC1155 tokens
-        _share.safeTransferFrom(account, address(this), _id, amount, "" );
+        _share.safeTransferFrom(account, address(this), _id, amount, "");
         
         // Mint scrip
         _mint(account, amount);
@@ -74,12 +74,14 @@ contract HypershareScrip is IHypershareScrip, ERC20, ERC1155Holder {
         public
     {
         // Require _share can transfer
-        require(_share.checkTransferIsValid(address(this), account, _id, amount), TransferInvalid());
+        if (!_share.checkTransferIsValid(address(this), account, _id, amount, ""))
+            revert TransferInvalid();
         
         // Handle unwrap if done by third party
         if (msg.sender != account) {
             uint _allowance =  allowance(account, msg.sender);
-            require(_allowance > amount, "ERC20: burn amount exceeds allowance");
+            if (_allowance < amount) 
+                revert BurnExceedAllowance();
             uint256 decreasedAllowance =  _allowance - amount; 
             _approve(account, msg.sender, decreasedAllowance);
         }
@@ -102,7 +104,6 @@ contract HypershareScrip is IHypershareScrip, ERC20, ERC1155Holder {
     function getHypershare()
         public
         view
-        virtual
         returns (address)
     {
         return address(_share);
@@ -112,7 +113,6 @@ contract HypershareScrip is IHypershareScrip, ERC20, ERC1155Holder {
     function getTokenId()
         public
         view
-        virtual
         returns (uint256)
     {
         return _id;
@@ -122,7 +122,6 @@ contract HypershareScrip is IHypershareScrip, ERC20, ERC1155Holder {
     function uri()
         public
         view
-        virtual
         returns (string memory)
     {
         return _uri;

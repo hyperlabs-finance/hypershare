@@ -55,7 +55,8 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
     {
         // Sanity checks
         for (uint256 i = 0; i < _claimTopicsRequired[tokenId].length; i++) {
-            require(_claimTopicsRequired[tokenId][i] != claimTopic, TopicExists());
+            if (_claimTopicsRequired[tokenId][i] == claimTopic)
+                revert TopicExists();
         }
 
         // Add topic 
@@ -78,7 +79,7 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
         for (uint256 i = 0; i < _claimTopicsRequired[tokenId].length; i++) {
             if (_claimTopicsRequired[tokenId][i] == claimTopic) {
                 _claimTopicsRequired[tokenId][i] = _claimTopicsRequired[tokenId][_claimTopicsRequired[tokenId].length - 1];
-                _claimTopicsRequired[tRemoved a claim topicokenId].pop();
+                _claimTopicsRequired[tokenId].pop();
                 emit RemovedClaimTopic(claimTopic, tokenId);
                 break;
             }

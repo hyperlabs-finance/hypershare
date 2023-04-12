@@ -3,7 +3,6 @@
 pragma solidity ^0.8.6;
 
 // Inherited
-import './Utils/Checkpoint.sol';
 import '../Interface/IHypershareRegistry.sol';
 import 'openzeppelin-contracts/contracts/access/Ownable.sol';
 
@@ -23,7 +22,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     IHypershare _share;
 
     // The Hypershare identity reg
-    IHyperbaseIdentityRegistry _identities;
+    IHyperbaseIdentityRegistry _identity;
 
     ////////////////
     // STATES
@@ -64,11 +63,8 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         address share,
         address identities
     ) {
-        _share = IHypershare(share);
-        // Event 
-        
-        _identities = IHyperbaseIdentityRegistry(identities);   
-        // Event
+        setShare(share);
+        setIdentities(identities);   
     }
         
     ////////////////
@@ -76,12 +72,14 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     ////////////////
     
     modifier onlyShare() {
-        require(msg.sender == address(_share), OnlyShareContract());
+        if (msg.sender == address(_share))
+            revert OnlyShareContract();
         _;
     }
 
     modifier onlyShareOrOwner() {
-        require(msg.sender == address(_share) || msg.sender == owner(), OnlyShareContractOrOwner());
+        if (msg.sender == address(_share) || msg.sender == owner())
+            revert OnlyShareContractOrOwner();
         _;
     }
 
@@ -101,10 +99,12 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         returns (bool)
     {
 		// Sanity checks 
-		require(ids.length == amounts.length, UnequalAmountsIds());
+        if (ids.length != amounts.length)
+		    revert UnequalAmountsIds();
 
         for (uint256 i = 0; i < ids.length; i++) {
-            require(transferred(from, to, ids[i], amounts[i]), TransferFailed());
+            if (!transferred(from, to, ids[i], amounts[i]))
+                revert TransferFailed();
         }
         return true;
     } 
@@ -188,7 +188,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         if (_shareholderIndices[id][account] == 0) {
             _shareholders[id].push(account);
             _shareholderIndices[id][account] = _shareholders[id].length;
-            _shareholderCountries[id][_identities.getCountryByAddress(account)]++;
+            _shareholderCountries[id][_identity.getCountryByAddress(account)]++;
         }
     }
 
@@ -213,7 +213,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
             _shareholderIndices[id][lastHolder] = _shareholderIndices[id][from];
             _shareholders[id].pop();
             _shareholderIndices[id][from] = 0;
-            _shareholderCountries[id][_identities.getCountryByAddress(from)]--;
+            _shareholderCountries[id][_identity.getCountryByAddress(from)]--;
 
         }
     }
@@ -231,7 +231,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
             if (amount > freeBalance) {
                 uint256 tokensToUnfreeze = amount - (freeBalance);
                 _frozenShares[id][from] = _frozenShares[id][from] - (tokensToUnfreeze);
-                emit SharesUnfrozen(from, id, tokensToUnfreeze);
+                emit SharesUnfrozen(id, from, tokensToUnfreeze);
             }
         }
     }
@@ -270,22 +270,22 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
 
     // Set a batch of addresses to frozen
     function batchSetFrozenShareType(
-        address[] memory accounts,
         uint256[] memory ids,
+        address[] memory accounts,
         bool[] memory freeze
     )
         public
         onlyShareOrOwner
     {
         for (uint256 i = 0; i < accounts.length; i++) {
-            setFrozenShareType(accounts[i], ids[i], freeze[i]);
+            setFrozenShareType(ids[i], accounts[i], freeze[i]);
         }
     }
     
     // Set an address to frozen
     function setFrozenShareType(
-        address account,
         uint256 id,
+        address account,
         bool freeze
     )
         public
@@ -294,34 +294,36 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         _frozenShareType[id][account] = freeze;
 
         // Event
-        emit UpdateFrozenShareType(account, id, freeze);
+        emit UpdateFrozenShareType(id, account, freeze);
     }
 
     // Freeze a portion of shares for a batch of accounts
     function batchFreezeShares(
-        address[] memory accounts,
         uint256[] memory ids,
+        address[] memory accounts,
         uint256[] memory amounts
     )
         public
     {
-        require((accounts.length == ids.length) && (ids.length == amounts.length), UnequalAccountsAmountsIds());   
+        if (accounts.length != ids.length && ids.length != amounts.length)
+            revert UnequalAccountsAmountsIds();   
         for (uint256 i = 0; i < accounts.length; i++)
-            freezeShares(accounts[i], ids[i], amounts[i]);
+            freezeShares(ids[i], accounts[i], amounts[i]);
     }
 
     // Freeze a portion of shares for a single account
     function freezeShares(
-        address account,
         uint256 id,
+        address account,
         uint256 amount
     )
         public
         onlyShareOrOwner
     {
-        require((_frozenShares[id][account] + amount) <= _share.balanceOf(account, id), ExceedsUnfrozenBalance());
+        if (_share.balanceOf(account, id) <= (_frozenShares[id][account] + amount))
+            revert ExceedsUnfrozenBalance();
         _frozenShares[id][account] = _frozenShares[id][account] + (amount);
-        emit SharesFrozen(account, id, amount);
+        emit SharesFrozen(id, account, amount);
     }
 
     //////////////////////////////////////////////
@@ -355,12 +357,23 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         view
         returns (bool)
     {
-        require(checkIsNotFrozenAllTransfer(from, to), AccountFrozen());
-        require(checkIsNotFrozenShareTypeTransfer(id, from, to), FrozenSharesAccount());
-        require(checkIsNotFrozenSharesTransfer(amount, id, from), ExceedsUnfrozenBalance());
-        require(checkIsWithinShareholderLimit(id), ExceedsMaximumShareholders());
-        require(checkIsAboveMinimumShareholdingTransfer(to, from, id, amount), BelowMinimumShareholding());
-        require(checkIsNonDivisibleTransfer(to, from, id, amount), ShareDivision());
+        if (!checkIsNotFrozenAllTransfer(from, to))
+            revert AccountFrozen();
+
+        if (!checkIsNotFrozenShareTypeTransfer(id, from, to))
+            revert FrozenSharesAccount();
+
+        if (!checkIsNotFrozenSharesTransfer(amount, id, from))
+            revert ExceedsUnfrozenBalance();
+
+        if (!checkIsWithinShareholderLimit(id))
+            revert ExceedsMaximumShareholders();
+
+        if (!checkIsAboveMinimumShareholdingTransfer(to, from, id, amount))
+            revert BelowMinimumShareholding();
+
+        if (!checkIsNonDivisibleTransfer(to, from, id, amount))
+            revert ShareDivision();
 
         return true;
     }
@@ -423,7 +436,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         view
         returns (bool)
     {   
-
+        // If enforcing non-divisisibility
         if (_shareholdingNonDivisible[id]) {
             // Standard transfer
             if (from != address(0) && to != address(0)) 
@@ -554,6 +567,22 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         onlyShareOrOwner
     {
         _share = IHypershare(share);
+
+        // Event
+        emit UpdatedHypershare(share);
+    }
+
+    // Sets the identity registry contract
+    function setIdentities(
+        address identity
+    )
+        public 
+        onlyShareOrOwner
+    {
+        _identity = IHyperbaseIdentityRegistry(identity);
+
+        // Event
+        emit UpdatedHyperbaseIdentityregistry(identity);
     }
 
     // Sets the holder limit
@@ -564,7 +593,8 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         public
         onlyShareOrOwner
     {
-        require(_shareholders.length < holderLimit, limitLessThanCurrentShareholders());
+        if (holderLimit < _shareholders[id].length)
+            revert LimitLessThanCurrentShareholders();
         
         // Set holder limit
         _shareholderLimit[id] = holderLimit;
@@ -589,7 +619,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     }
 
     // WARNING! This is extremely hard to reverse
-    // Toggle transfers that are not modulus zero e18
+    // Set transfers that are not modulus zero e18
     function setNonDivisible(
         uint256 id
     )
@@ -627,7 +657,8 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         view
         returns (address)
     {
-        require(index < _shareholders[id].length, ShareholderNotExist());
+        if (_shareholders[id].length < index)
+            revert ShareholderNotExist();
         return _shareholders[id][index];
     }
 
@@ -685,6 +716,18 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         returns (bool)
     {
         return _shareholdingNonDivisible[id];
+    }
+
+    // Returns frozen shares of an account
+    function getFrozenShares(
+        address account,
+        uint256 id
+    )
+        public
+        view
+        returns (uint256)
+    {
+        return _frozenShares[id][account];
     }
    
 }

@@ -45,6 +45,20 @@ contract HypershareScrip is IHypershareScrip, ERC20, ERC1155Holder {
         _share = IHypershare(share);
     }
 
+    ////////////////
+    // MODIFIERS
+    ////////////////
+
+    // Pre-validate the transfer to ensure the recipient is elligible
+    modifier validTransfer(
+        address account, 
+        uint256 amount
+    ) {
+        if (!_share.checkTransferIsValid(address(this), account, _id, amount, ""))
+            revert TransferInvalid();
+        _;
+    }
+
     //////////////////////////////////////////////
     // WRAP | UNWRAP
     //////////////////////////////////////////////
@@ -72,11 +86,8 @@ contract HypershareScrip is IHypershareScrip, ERC20, ERC1155Holder {
         uint256 amount
     )
         public
+        validTransfer(account, amount)
     {
-        // Require _share can transfer
-        if (!_share.checkTransferIsValid(address(this), account, _id, amount, ""))
-            revert TransferInvalid();
-        
         // Handle unwrap if done by third party
         if (msg.sender != account) {
             uint _allowance =  allowance(account, msg.sender);

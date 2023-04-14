@@ -71,15 +71,59 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     // MODIFIERS
     ////////////////
     
+    // Ensure that only the hypershare contract can call this function
     modifier onlyShare() {
         if (msg.sender == address(_share))
             revert OnlyShareContract();
         _;
     }
 
+    // Ensure that only hypershare or owner can call this function 
     modifier onlyShareOrOwner() {
         if (msg.sender == address(_share) || msg.sender == owner())
             revert OnlyShareContractOrOwner();
+        _;
+    }
+
+    // Ensure that ids and amounts are equal
+    modifier equalIdsAmounts(
+        uint256[] memory ids,
+        uint256[] memory amounts
+    ) {
+        if (ids.length != amounts.length)
+           revert UnequalAmountsIds();    
+        _;
+    }
+
+    // Ensure that ids, accounts and amounts are equal
+    modifier equalIdsAccountsAmounts(
+        uint256[] memory ids,
+        address[] memory accounts,
+        uint256[] memory amounts
+    ) {
+        if (accounts.length != ids.length && ids.length != amounts.length)
+            revert UnequalAccountsAmountsIds();   
+        _;
+    }
+
+    //  Ensure the account has sufficient unfrozen shares
+    modifier sufficientUnfrozenShares(
+        uint256 id,
+        address account,
+        uint256 amount
+    ) {
+        if (_share.balanceOf(account, id) <= (_frozenShares[id][account] + amount))
+            revert ExceedsUnfrozenBalance();
+        _;
+    }
+
+    // Ensure that the new shareholder limit is not less than the current amount of shareholders
+    modifier notLessThanHolders(
+        uint256 holderLimit,
+        uint256 id
+    ) {
+        if (holderLimit < _shareholders[id].length)
+            revert LimitLessThanCurrentShareholders();
         _;
     }
 
@@ -96,12 +140,9 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     )
         public
         onlyShare
+        equalIdsAmounts(ids, amounts)
         returns (bool)
     {
-		// Sanity checks 
-        if (ids.length != amounts.length)
-		    revert UnequalAmountsIds();
-
         for (uint256 i = 0; i < ids.length; i++) {
             if (!transferred(from, to, ids[i], amounts[i]))
                 revert TransferFailed();
@@ -304,9 +345,8 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         uint256[] memory amounts
     )
         public
+        equalIdsAccountsAmounts(ids, accounts, amounts)
     {
-        if (accounts.length != ids.length && ids.length != amounts.length)
-            revert UnequalAccountsAmountsIds();   
         for (uint256 i = 0; i < accounts.length; i++)
             freezeShares(ids[i], accounts[i], amounts[i]);
     }
@@ -319,9 +359,8 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     )
         public
         onlyShareOrOwner
+        sufficientUnfrozenShares(id, account, amount)
     {
-        if (_share.balanceOf(account, id) <= (_frozenShares[id][account] + amount))
-            revert ExceedsUnfrozenBalance();
         _frozenShares[id][account] = _frozenShares[id][account] + (amount);
         emit SharesFrozen(id, account, amount);
     }
@@ -592,10 +631,8 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     )
         public
         onlyShareOrOwner
+        notLessThanHolders(holderLimit, id)
     {
-        if (holderLimit < _shareholders[id].length)
-            revert LimitLessThanCurrentShareholders();
-        
         // Set holder limit
         _shareholderLimit[id] = holderLimit;
 
@@ -657,8 +694,6 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         view
         returns (address)
     {
-        if (_shareholders[id].length < index)
-            revert ShareholderNotExist();
         return _shareholders[id][index];
     }
 

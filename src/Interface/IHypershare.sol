@@ -14,7 +14,7 @@ interface IHypershare is IERC1155 {
     error TransferToZeroAddress();
 
     // Insufficient balance for transfer
-    error InsufficientShares();
+    error InsufficientTokens();
 
     // Accounts and amounts are not equal
     error UnequalAccountsAmmounts();

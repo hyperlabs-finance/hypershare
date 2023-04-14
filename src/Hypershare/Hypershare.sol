@@ -52,6 +52,48 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 	    setRegistry(registry);
     }
 
+    ////////////////
+    // MODIFIERS
+    ////////////////
+
+    modifier transferToZeroAddress(address to) {
+        if (to == address(0))
+            revert TransferToZeroAddress();
+        _;
+    }
+
+    modifier sufficientTokens(
+        address from,
+        uint256 id,
+        uint256 amount
+    ) {
+        if (from != address(0))
+            if (balanceOf(from, id) <= amount)
+                revert InsufficientTokens();
+        _;
+    } 
+
+    modifier equalAccountsAmmounts(
+        address[] memory accounts,
+        uint256[] memory amounts
+    ) {
+        if (accounts.length != amounts.length)
+            revert UnequalAccountsAmmounts();
+        _;
+    }
+
+    modifier mintToZeroAddress(address account) {
+        if (account == address(0))
+            revert MintToZeroAddress();
+        _;
+    }
+
+    modifier mintZeroTokens(uint256 amount) {
+        if (amount == 0)
+            revert MintZeroTokens();
+        _;
+    }
+
     //////////////////////////////////////////////
     // TRANSFERS
     //////////////////////////////////////////////
@@ -65,15 +107,10 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         bytes memory data
     )
         public
+        transferToZeroAddress(to)
+        sufficientTokens(from, id, amount)
         returns (bool)
     {
-        if (to == address(0))
-            revert TransferToZeroAddress();
-
-        if (from != address(0))
-            if (balanceOf(from, id) <= amount)
-                revert InsufficientShares();
-
         uint256[] memory ids = new uint256[](1);
         ids[0] = id;
 
@@ -211,9 +248,8 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     )
         public
         onlyOwner
+        equalAccountsAmmounts(accounts, amounts)
     {
-        if (accounts.length != amounts.length)
-            revert UnequalAccountsAmmounts();
         for (uint256 i = 0; i < accounts.length; i++) {
             mint(accounts[i], id, amounts[i], data);
         }
@@ -228,14 +264,9 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     )
         public
         onlyOwner
+        mintToZeroAddress(account)
+        mintZeroTokens(amount)
     {
-        // Sanity checks
-        if (account == address(0))
-            revert MintToZeroAddress();
-
-        if (amount == 0)
-            revert MintZeroTokens();
-        
         // Burn
         _mint(account, id, amount, data);
 
@@ -255,10 +286,8 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     )
         public
         onlyOwner
+        equalAccountsAmmounts(accounts, amounts)
     {
-        if (accounts.length != amounts.length)
-            revert UnequalAccountsAmmounts();
-            
         for (uint256 i = 0; i < accounts.length; i++) {
             burn(accounts[i], id, amounts[i], data );
         }

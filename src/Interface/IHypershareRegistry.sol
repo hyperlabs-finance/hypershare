@@ -40,9 +40,6 @@ interface IHypershareRegistry {
     // Transfer results in divisible shares
     error ShareDivision();
 
-    // Shareholder doesn't exist
-    error ShareholderNotExist();
-
     // Update to shareholder limit is less than the current amount of shareholders
     error LimitLessThanCurrentShareholders();
 

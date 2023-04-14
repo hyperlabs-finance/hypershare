@@ -40,6 +40,22 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
         setClaimRegistry(claims);
     }
 
+  	////////////////
+    // MODIFIER
+    ////////////////
+
+    // Ensure the claim topic does not already exist
+    modifier topicNotExists(
+        uint256 claimTopic,
+        uint256 tokenId
+    ) {
+        for (uint256 i = 0; i < _claimTopicsRequired[tokenId].length; i++) {
+            if (_claimTopicsRequired[tokenId][i] == claimTopic)
+                revert TopicExists();
+        }
+        _;
+    }
+
     //////////////////////////////////////////////
     // ADD | REMOVE CLAIM TOPICS
     //////////////////////////////////////////////
@@ -52,13 +68,8 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
         public
         override
         onlyOwner
+        topicNotExists(claimTopic, tokenId)
     {
-        // Sanity checks
-        for (uint256 i = 0; i < _claimTopicsRequired[tokenId].length; i++) {
-            if (_claimTopicsRequired[tokenId][i] == claimTopic)
-                revert TopicExists();
-        }
-
         // Add topic 
         _claimTopicsRequired[tokenId].push(claimTopic);
 

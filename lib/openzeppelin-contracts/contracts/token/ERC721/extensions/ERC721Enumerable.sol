@@ -8,7 +8,7 @@ import "./IERC721Enumerable.sol";
 
 /**
  * @dev This implements an optional extension of {ERC721} defined in the EIP that adds
- * enumerability of all the token ids in the contract as well as all token ids owned by each
+ * enumerability of all the token IDs in the contract as well as all token IDs owned by each
  * account.
  */
 abstract contract ERC721Enumerable is ERC721, IERC721Enumerable {
@@ -18,10 +18,10 @@ abstract contract ERC721Enumerable is ERC721, IERC721Enumerable {
     // Mapping from token ID to index of the owner tokens list
     mapping(uint256 => uint256) private _ownedTokensIndex;
 
-    // Array with all token ids, used for enumeration
+    // Array with all token IDs, used for enumeration
     uint256[] private _allTokens;
 
-    // Mapping from token id to position in the allTokens array
+    // Mapping from token ID to position in the allTokens array
     mapping(uint256 => uint256) private _allTokensIndex;
 
     /**

@@ -10,106 +10,115 @@ interface IHypershare is IERC1155 {
     // ERRORS
     ////////////////
 
-    // Transfer to the zero address
+    /**
+     * @dev Transfer to the zero address.
+     */
     error TransferToZeroAddress();
 
-    // Insufficient balance for transfer
+    /**
+     * @dev Insufficient balance for transfer.
+     */
     error InsufficientTokens();
 
-    // Accounts and amounts are not equal
+    /**
+     * @dev Accounts and amounts are not equal.
+     */
     error UnequalAccountsAmmounts();
 
-    // Exceeds holder transfer frozen
+    /**
+     * @dev Exceeds holder transfer frozen.
+     */
     error TransferInelligible();
 
-    // Could not update share registry with transfer
+    /**
+     * @dev Could not update share registry with transfer.
+     */
     error CouldNotUpdateShareholders();
     
-    // Accounts is not elligible to recieve shares.
+    /**
+     * @dev Account is not elligible to receive shares.
+     */
     error RecieverInelligible();
 
-    // Cannot mint to zero address
+    /**
+     * @dev Cannot mint to zero address.
+     */
     error MintToZeroAddress();
     
-    // Cannot mint to zero tokens
+    /**
+     * @dev Cannot mint to zero tokens.
+     */
     error MintZeroTokens();
 
     ////////////////
     // EVENTS
     ////////////////
     
-    // Added or updated the shareholder registry
+    /**
+     * @dev Added or updated the shareholder registry.
+     */
     event UpdatedHypershareRegistry(address indexed registry);  
-
-    // Added or updated the compliance claims contract
+    
+    /**
+     * @dev Added or updated the compliance claims contract.
+     */
     event UpdatedHypershareCompliance(address indexed compliance);  
     
-    // Successful or transfer or shares to new investor wallet
+    /**
+     * @dev Successful transfer of shares to new investor wallet.
+     */
     event RecoverySuccess(address indexed lostWallet, address indexed newWallet);
-
-    // New share type creation
+    
+    /**
+     * @dev New share type created.
+     */
     event NewToken(uint256 indexed id, uint256 shareholderLimit, uint256 shareholdingMinimum, bool shareholdingNonDivisible);
-
-    // Share issuance
+    
+    /**
+     * @dev New shares issued.
+     */
     event MintTokens(address indexed account, uint256 indexed id, uint256 amount, bytes indexed data);
-
-    // Shares burned
+    
+    /**
+     * @dev Shares burned.
+     */
     event BurnTokens(address indexed account, uint256 indexed id, uint256 amount, bytes indexed data);
-    
-    //////////////////////////////////////////////
-    // TRANSFERS
-    //////////////////////////////////////////////
-
-    // Pre-validates the elligibility of a share transfer via token balances and compliance
-    function checkTransferIsValid(address from, address to, uint256 id, uint256 amount, bytes memory data) external returns (bool);
-
-    // Owner function to force a bathc of share transfers between two parties    
-    function forcedBatchTransferFrom(address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) external;
-    
-    // Owner function to force a share transfer between two parties    
-    function forcedTransferFrom(address from, address to, uint256 id, uint256 amount, bytes memory data) external;
-
-    // Owner function transfer the shares and state of a lost wallet to a replacement wallet
-    function recover(address lostWallet, address newWallet, bytes memory data) external returns (bool);
-    
-    //////////////////////////////////////////////
-    // MINT AND BURN 
-    //////////////////////////////////////////////
-
-    // Mints shares from a group of shareholders. Not to be confused with mintBatch as only takes single token id.
-    function mintGroup(address[] memory accounts, uint256 id, uint256[] memory amounts, bytes memory data) external;
-    
-    // Burns shares from a group of shareholders. Not to be confused with mintBatch as only takes single token id.
-    function burnGroup(address[] memory accounts, uint256 id, uint256[] memory amounts, bytes memory data) external;
-
-    // Mints shares to account
-    function mint(address account, uint256 id, uint256 amount, bytes memory data) external;
-
-    // Burns shares from account
-    function burn(address account, uint256 id, uint256 amount, bytes memory data) external;
 
     //////////////////////////////////////////////
     // CREATE NEW TOKEN
     //////////////////////////////////////////////
 
-    // Owner function to create a new share type. Increments token count and updates the registry.
     function newToken(uint256 shareholderLimit, uint256 shareholdingMinimum, bool shareholdingNonDivisible) external returns (uint256);
+
+    //////////////////////////////////////////////
+    // TRANSFERS
+    //////////////////////////////////////////////
+
+    function checkTransferIsValid(address from, address to, uint256 id, uint256 amount, bytes memory data) external returns (bool);
+    function forcedBatchTransferFrom(address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) external;
+    function forcedTransferFrom(address from, address to, uint256 id, uint256 amount, bytes memory data) external;
+    function recover(address lostWallet, address newWallet, bytes memory data) external returns (bool);
+
+    //////////////////////////////////////////////
+    // MINT AND BURN 
+    //////////////////////////////////////////////
+
+    function mintGroup(address[] memory accounts, uint256 id, uint256[] memory amounts, bytes memory data) external;
+    function burnGroup(address[] memory accounts, uint256 id, uint256[] memory amounts, bytes memory data) external;
+    function mint(address account, uint256 id, uint256 amount, bytes memory data) external;
+    function burn(address account, uint256 id, uint256 amount, bytes memory data) external;
 
     //////////////////////////////////////////////
     // SETTERS
     //////////////////////////////////////////////
 
-    // Update the address of the compliance claims required contract
     function setCompliance(address compliance) external;
-
-    // Update the address of the shareholder registry. 
 	function setRegistry(address registry) external;
 
     //////////////////////////////////////////////
     // GETTERS
     //////////////////////////////////////////////
 
-    // Returns the total token count. Token ids are incremental so current count is the most recent token
     function getTotalTokens() external view returns (uint256);
 
 }

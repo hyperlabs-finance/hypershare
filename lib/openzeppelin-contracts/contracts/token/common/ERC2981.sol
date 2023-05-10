@@ -9,8 +9,8 @@ import "../../utils/introspection/ERC165.sol";
 /**
  * @dev Implementation of the NFT Royalty Standard, a standardized way to retrieve royalty payment information.
  *
- * Royalty information can be specified globally for all token ids via {_setDefaultRoyalty}, and/or individually for
- * specific token ids via {_setTokenRoyalty}. The latter takes precedence over the first.
+ * Royalty information can be specified globally for all token IDs via {_setDefaultRoyalty}, and/or individually for
+ * specific token IDs via {_setTokenRoyalty}. The latter takes precedence over the first.
  *
  * Royalty is specified as a fraction of sale price. {_feeDenominator} is overridable but defaults to 10000, meaning the
  * fee is specified in basis points by default.
@@ -84,7 +84,7 @@ abstract contract ERC2981 is IERC2981, ERC165 {
     }
 
     /**
-     * @dev Sets the royalty information for a specific token id, overriding the global default.
+     * @dev Sets the royalty information for a specific token ID, overriding the global default.
      *
      * Requirements:
      *
@@ -104,7 +104,7 @@ abstract contract ERC2981 is IERC2981, ERC165 {
     }
 
     /**
-     * @dev Resets royalty information for the token id back to the global default.
+     * @dev Resets royalty information for the token ID back to the global default.
      */
     function _resetTokenRoyalty(uint256 tokenId) internal virtual {
         delete _tokenRoyaltyInfo[tokenId];

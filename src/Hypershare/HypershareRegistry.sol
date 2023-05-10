@@ -3,14 +3,21 @@
 pragma solidity ^0.8.6;
 
 // Inherited
-import '../Interface/IHypershareRegistry.sol';
+import '../interface/IHypershareRegistry.sol';
 import 'openzeppelin-contracts/contracts/access/Ownable.sol';
 
-// Calls
-import '../Interface/IHyperbaseIdentityRegistry.sol';
-import '../Interface/IHypershare.sol';
+// Interfaces
+import '../interface/IHyperbaseIdentityRegistry.sol';
+import '../interface/IHypershare.sol';
 
-// #TODO Refactor shareholder limits for total across share types and intra-share limits + issuer total limits + issuer intra-share limit
+/**
+
+    HypershareRegistry keeps an on-chain record of the shareholders of its corresponding Hypershare
+    contract. It then uses this record to enforce limit-based compliance checks, such as ensuring
+    that a share transfer does not result in too many shareholders, fractional shareholdings or 
+    that a shareholder has not been frozen by the owner-operator.
+
+ */
 
 contract HypershareRegistry is IHypershareRegistry, Ownable  {
 
@@ -18,41 +25,65 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     // INTERFACES
     ////////////////
 
-    // The share contract instance
+    /**
+     * @dev The share contract instance.
+     */ 
     IHypershare _share;
 
-    // The Hypershare identity reg
+    /**
+     * @dev The Hypershare identity registry.
+     */ 
     IHyperbaseIdentityRegistry _identity;
 
     ////////////////
     // STATES
     ////////////////
 	
-    // Mapping from token ID to the addresses of all shareholders
+    /**
+     * Mapping from token ID to the addresses of all shareholders.
+     */
     mapping(uint256 => address[]) public _shareholders;
 
-    // Mapping from token ID to the index of each shareholder in the array `_shareholders`
+    /**
+     * Mapping from token ID to the index of each shareholder in the array `_shareholders`.
+     */
     mapping(uint256 => mapping(address => uint256)) public _shareholderIndices;
 
-    // Mapping from token ID to the amount of _shareholders per country
+    /**
+     * Mapping from token ID to the amount of _shareholders per country.
+     */
     mapping(uint256 => mapping(uint16 => uint256)) public _shareholderCountries;
 
-    // Mapping from token ID to the limit on the amount of shareholders for this token, when transfering between holders
+    /**
+     * Mapping from token ID to the limit on the amount of shareholders for this token, when transfering 
+     * between holders.
+     */
     mapping(uint256 => uint256) public _shareholderLimit;
     
-    // Mapping from token ID to minimum share holding, transfers that result in holdings that fall bellow the mininmum will fail 
+    /**
+     * Mapping from token ID to minimum share holding, transfers that result in holdings that fall bellow 
+     * the mininmum will fail.
+     */
     mapping(uint256 => uint256) public _shareholdingMinimum;
     
-    // Mapping from token ID to non-divisible bool, transfers that result in divisible holdings will fail
+    /**
+     * Mapping from token ID to non-divisible bool, transfers that result in divisible holdings will fail.
+     */
     mapping(uint256 => bool) public _shareholdingNonDivisible;
 
-    // Mapping from account address to bool for frozen y/n across all tokens
+    /**
+     * Mapping from account address to bool for frozen y/n across all tokens.
+     */
     mapping(address => bool) public _frozenAll;
 
-    // Mapping from token ID to account address to bool for frozen y/n
-    mapping(uint256 => mapping(address => bool)) public _frozenShareType;
+    /**
+     * Mapping from token ID to account address to bool for frozen y/n.
+     */
+    mapping(uint256 => mapping(address => bool)) public _frozenTokenId;
 
-    // Mapping from token ID to mapping from account address to uint amount of shares frozen
+    /**
+     * Mapping from token ID to mapping from account address to uint amount of shares frozen.
+     */
 	mapping(uint256 => mapping(address => uint256)) public _frozenShares;
 
     ////////////////
@@ -71,58 +102,110 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     // MODIFIERS
     ////////////////
     
-    // Ensure that only the hypershare contract can call this function
+    /**
+     * @dev Ensures that only the hypershare contract can call this function.
+     */
     modifier onlyShare() {
         if (msg.sender == address(_share))
             revert OnlyShareContract();
         _;
     }
 
-    // Ensure that only hypershare or owner can call this function 
+    /**
+     * @dev Ensures that only hypershare or owner can call this function.
+     */
     modifier onlyShareOrOwner() {
         if (msg.sender == address(_share) || msg.sender == owner())
             revert OnlyShareContractOrOwner();
         _;
     }
 
-    // Ensure that ids and amounts are equal
+    /**
+     * @dev Ensures that ids and amounts are equal.
+     * @param tokenIds An array of the token IDs.
+     * @param amounts An array of the integer amounts.
+     */
     modifier equalIdsAmounts(
-        uint256[] memory ids,
+        uint256[] memory tokenIds,
         uint256[] memory amounts
     ) {
-        if (ids.length != amounts.length)
+        if (tokenIds.length != amounts.length)
            revert UnequalAmountsIds();    
         _;
     }
 
-    // Ensure that ids, accounts and amounts are equal
+    /**
+     * @dev Ensures that tokenIds, accounts and amounts are equal.
+     * @param tokenIds An array of the token IDs. 
+     * @param accounts An array of user addresses.
+     * @param amounts An array of the integer amounts.
+     */
     modifier equalIdsAccountsAmounts(
-        uint256[] memory ids,
+        uint256[] memory tokenIds,
         address[] memory accounts,
         uint256[] memory amounts
     ) {
-        if (accounts.length != ids.length && ids.length != amounts.length)
+        if (accounts.length != tokenIds.length && tokenIds.length != amounts.length)
             revert UnequalAccountsAmountsIds();   
         _;
     }
 
-    //  Ensure the account has sufficient unfrozen shares
+    /**
+     * @dev Ensures that accounts and freeze are equal.
+     * @param accounts An array of user addresses to freeze/unfreeze.
+     * @param freeze An array of boolean as to if the account should be frozen. 
+     */
+    modifier equalAccountsFreeze(
+        address[] memory accounts,
+        bool[] memory freeze
+    ) {
+        if (accounts.length != freeze.length)
+            revert UnequalAccountsFreeze();
+        _;
+    }
+
+    /**
+     * @dev Ensures that token IDs, accounts and freeze are equal. 
+     * @param tokenIds An array of the token IDs to freeze/unfreeze users for. 
+     * @param accounts An array of user addresses to freeze/unfreeze.
+     * @param freeze An array of boolean as to if the account should be frozen. 
+     */
+    modifier equalTokensAccountsFreeze(
+        uint256[] memory tokenIds,
+        address[] memory accounts,
+        bool[] memory freeze
+    ) {
+        if (tokenIds.length != accounts.length || accounts.length != freeze.length)
+            revert UnequalTokensAccountsFreeze();
+        _;
+    }
+
+    /**
+     * @dev Ensures the account has sufficient unfrozen shares.
+     * @param tokenId The token IDs for the transaction. 
+     * @param account The user receiving addresskens to.
+     * @param amount The integer amounts for the transfer.
+     */
     modifier sufficientUnfrozenShares(
-        uint256 id,
+        uint256 tokenId,
         address account,
         uint256 amount
     ) {
-        if (_share.balanceOf(account, id) <= (_frozenShares[id][account] + amount))
+        if (_share.balanceOf(account, tokenId) <= (_frozenShares[tokenId][account] + amount))
             revert ExceedsUnfrozenBalance();
         _;
     }
 
-    // Ensure that the new shareholder limit is not less than the current amount of shareholders
+    /**
+     * @dev Ensures that the new shareholder limit is not less than the current amount of shareholders.
+     * @param holderLimit The maximum number of shareholders per token ID.
+     * @param tokenId The token to enforce the holder limit on.
+     */
     modifier notLessThanHolders(
-        uint256 holderLimit,
-        uint256 id
+        uint256 tokenId,
+        uint256 holderLimit
     ) {
-        if (holderLimit < _shareholders[id].length)
+        if (holderLimit < _shareholders[tokenId].length)
             revert LimitLessThanCurrentShareholders();
         _;
     }
@@ -131,39 +214,51 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     // TRANSFER FUNCTIONS
     //////////////////////////////////////////////
 
-    // Transferred batch
+    /**
+     * @dev Updates the shareholder registry to reflect a batch of transfers.
+     * @param from The sending address. 
+     * @param to The receiving address.
+     * @param tokenIds An array of token IDs to transfer between the addresses.
+     * @param amounts An array of integer amounts for each token ID transfer in the batch.
+     */
     function batchTransferred(
         address from,
         address to,
-        uint256[] memory ids,
+        uint256[] memory tokenIds,
         uint256[] memory amounts
     )
         public
         onlyShare
-        equalIdsAmounts(ids, amounts)
+        equalIdsAmounts(tokenIds, amounts)
         returns (bool)
     {
-        for (uint256 i = 0; i < ids.length; i++) {
-            if (!transferred(from, to, ids[i], amounts[i]))
+        for (uint256 i = 0; i < tokenIds.length; i++)
+            if (!transferred(from, to, tokenIds[i], amounts[i]))
                 revert TransferFailed();
-        }
+    
         return true;
     } 
 
-    // Update the cap table on transfer
+    /**
+     * @dev Updates the shareholder registry to reflect a share transfer.
+     * @param from The sending address. 
+     * @param to The receiving address.
+     * @param tokenId The token ID for the token to be transfered.
+     * @param amount The integer amount of tokens to be transfered.
+     */
     function transferred(
         address from,
         address to,
-        uint256 id,
+        uint256 tokenId,
         uint256 amount
     )
         public
         onlyShare
         returns (bool)
     {
-        updateShareholders(to, id);
-        pruneShareholders(from, id);
-        updateUnfrozenShares(from, id, amount);
+        updateShareholders(to, tokenId);
+        pruneShareholders(from, tokenId);
+        updateUnfrozenShares(from, tokenId, amount);
 
         return true;
     }
@@ -172,8 +267,15 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     // NEW TOKEN 
     //////////////////////////////////////////////
     
+    /**
+     * @dev Bundles all the setters needed for token configuration into a single function for token creation.
+     * @param tokenId The token ID of the newly created token.
+     * @param shareholderLimit The maximum number of shareholders for the newly created token.
+     * @param shareholdingMinimum The minimum amount of shares per shareholder for the token.
+     * @param shareholdingNonDivisible boolean as to if share transfers can result in fractional shares. 
+     */
     function newToken(
-        uint256 id,
+        uint256 tokenId,
         uint256 shareholderLimit,
         uint256 shareholdingMinimum,
         bool shareholdingNonDivisible
@@ -181,98 +283,121 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         public
         onlyShareOrOwner
     {
-        setShareholderLimit(shareholderLimit, id);   
-        setShareholdingMinimum(id, shareholdingMinimum);
-        setNonDivisible(id);
+        setShareholderLimit(tokenId, shareholderLimit);   
+        setShareholdingMinimum(tokenId, shareholdingMinimum);
+        setNonDivisible(tokenId, shareholdingNonDivisible);
     }
     
     //////////////////////////////////////////////
     // MINT | BURN 
     //////////////////////////////////////////////
 
-    // Update the cap table on mint
+    /**
+     * @dev Bundles update functions into a single function for minting.
+     * @param to The address tokens are being minted to.
+     * @param tokenId The token ID of the minted tokens.
+     * @param amount The amount of tokens being minted to the address.
+     */
     function mint(
         address to,
-        uint256 id,
+        uint256 tokenId,
         uint256 amount
     )
         public
         onlyShare
     {
-        updateShareholders(to, id);
+        updateShareholders(to, tokenId);
     }
     
-    // Update the cap table on burn
+    /**
+     * @dev Bundles update functions into a single function for burning.
+     * @param account The account to burn tokens from. 
+     * @param tokenId The ID of the token that is being burnt.
+     * @param amount The amount of tokens being burnt from the address.
+     */
     function burn(
         address account,
-        uint256 id,
+        uint256 tokenId,
         uint256 amount
     )
         public
         onlyShare
     {
-        updateUnfrozenShares(account, id, amount); 
-        pruneShareholders(account, id);  
+        updateUnfrozenShares(account, tokenId, amount); 
+        pruneShareholders(account, tokenId);  
     }
 
     //////////////////////////////////////////////
     // UPDATES
     //////////////////////////////////////////////
 
-    // Add a new shareholder to shareholders
+    /**
+     * @dev Adds a new shareholder and corresponding details to the shareholder registry.
+     * @param account The address of the account to either add or update in the shareholder registry.
+     * @param tokenId The token ID to add or update for the user. 
+     */
     function updateShareholders(
         address account,
-        uint256 id
+        uint256 tokenId
     )
         public
     {
-        if (_shareholderIndices[id][account] == 0) {
-            _shareholders[id].push(account);
-            _shareholderIndices[id][account] = _shareholders[id].length;
-            _shareholderCountries[id][_identity.getCountryByAddress(account)]++;
+        if (_shareholderIndices[tokenId][account] == 0) {
+            _shareholders[tokenId].push(account);
+            _shareholderIndices[tokenId][account] = _shareholders[tokenId].length;
+            _shareholderCountries[tokenId][_identity.getCountryByAddress(account)]++;
         }
     }
 
-    // Rebuilds the shareholder directory
+    /**
+     * @dev Rebuilds the shareholder registry and trims any shareholders who no longer have shares.
+     * @param from The address of the user to remove from the shareholder registry.
+     * @param tokenId The token ID in to prune the shareholder from.
+     */
     function pruneShareholders(
         address from,
-        uint256 id
+        uint256 tokenId
     )
         public
     {
-        if (from != address(0) && _shareholderIndices[id][from] != 0) {
+        if (from != address(0) && _shareholderIndices[tokenId][from] != 0) {
             
             // If shareholder still has shares
-            if (_share.balanceOf(from, id) > 0) {
+            if (_share.balanceOf(from, tokenId) > 0)
                 return;
-            }
+        
             // Else trim the indicies
-            uint256 holderIndex = _shareholderIndices[id][from] - 1;
-            uint256 lastIndex = _shareholders[id].length - 1;
-            address lastHolder = _shareholders[id][lastIndex];
-            _shareholders[id][holderIndex] = lastHolder;
-            _shareholderIndices[id][lastHolder] = _shareholderIndices[id][from];
-            _shareholders[id].pop();
-            _shareholderIndices[id][from] = 0;
-            _shareholderCountries[id][_identity.getCountryByAddress(from)]--;
+            uint256 holderIndex = _shareholderIndices[tokenId][from] - 1;
+            uint256 lastIndex = _shareholders[tokenId].length - 1;
+            address lastHolder = _shareholders[tokenId][lastIndex];
+            _shareholders[tokenId][holderIndex] = lastHolder;
+            _shareholderIndices[tokenId][lastHolder] = _shareholderIndices[tokenId][from];
+            _shareholders[tokenId].pop();
+            _shareholderIndices[tokenId][from] = 0;
+            _shareholderCountries[tokenId][_identity.getCountryByAddress(from)]--;
 
         }
     }
 
-    // Update the unfrozen balance that is available to transfer post transfer
+    /**
+     * @dev Update the unfrozen balance that is available to transfer post transfer.
+     * @param account The account to freeze or unfreezen tokens on.
+     * @param tokenId The ID of the token to freeze or unfreeze.
+     * @param amount The amount of tokens to freeze or unfreeze.
+     */
     function updateUnfrozenShares(
-        address from,
-        uint256 id,
+        address account,
+        uint256 tokenId,
         uint256 amount
     )
         internal
     {
-        if (from != address(0)) {
-            uint256 freeBalance = _share.balanceOf(from, id) - (_frozenShares[id][from]);
+        if (account != address(0)) {
+            uint256 freeBalance = _share.balanceOf(account, tokenId) - (_frozenShares[tokenId][account]);
             if (amount > freeBalance) {
                 uint256 tokensToUnfreeze = amount - (freeBalance);
-                _frozenShares[id][from] = _frozenShares[id][from] - (tokensToUnfreeze);
-                emit SharesUnfrozen(id, from, tokensToUnfreeze);
+                _frozenShares[tokenId][account] = _frozenShares[tokenId][account] - (tokensToUnfreeze);
+                emit SharesUnfrozen(tokenId, account, tokensToUnfreeze);
             }
         }
     }
@@ -281,20 +406,28 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     // FREEZE | UNFREEZE
     //////////////////////////////////////////////
 
-    // Set a batch of addresses to frozen all
+    /**
+     * @dev Set a batch of addresses to frozen across all tokens.
+     * @param accounts An array of accounts to freeze/unfreeze.
+     * @param freeze An array of booleans as to if the account should be frozen.
+     */
     function batchSetFrozenAll(
         address[] memory accounts,
         bool[] memory freeze
     )
         public
         onlyShareOrOwner 
+        equalAccountsFreeze(accounts, freeze)
     {
-        for (uint256 i = 0; i < accounts.length; i++) {
+        for (uint256 i = 0; i < accounts.length; i++)
             setFrozenAll(accounts[i], freeze[i]);
-        }
     }
 
-    // Freeze all interactions on an account
+    /**
+     * @dev Freeze a single account across all tokens.
+     * @param account The account to freeze/unfreeze for all interactions.
+     * @param freeze The booleans as to if the account should be frozen.
+     */
     function setFrozenAll(
         address account,
         bool freeze
@@ -309,87 +442,122 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         emit UpdateFrozenAll(account, freeze);
     }
 
-    // Set a batch of addresses to frozen
-    function batchSetFrozenShareType(
-        uint256[] memory ids,
+    /**
+     * @dev Freeze a batch of accounts from taking actions on a specific share type.
+     * @param tokenIds An array of the token IDs to freeze/unfreeze users for. 
+     * @param accounts An array of user addresses to freeze/unfreeze.
+     * @param freeze An array of booleans as to if the account should be frozen. 
+     */
+    function batchSetFrozenTokenId(
+        uint256[] memory tokenIds,
         address[] memory accounts,
         bool[] memory freeze
     )
         public
         onlyShareOrOwner
+        equalTokensAccountsFreeze(tokenIds, accounts, freeze)
     {
-        for (uint256 i = 0; i < accounts.length; i++) {
-            setFrozenShareType(ids[i], accounts[i], freeze[i]);
-        }
+        for (uint256 i = 0; i < accounts.length; i++)
+            setFrozenTokenId(tokenIds[i], accounts[i], freeze[i]);
     }
     
-    // Set an address to frozen
-    function setFrozenShareType(
-        uint256 id,
+    /**
+     * @dev Freeze all actions for an account of a specific share type.
+     * @param tokenId The token ID to set account frozen/unfrozen.
+     * @param account The user address to freeze/unfreeze.
+     * @param freeze The boolean as to if the account should be frozen.
+     */
+    function setFrozenTokenId(
+        uint256 tokenId,
         address account,
         bool freeze
     )
         public
         onlyShareOrOwner 
     {
-        _frozenShareType[id][account] = freeze;
+        _frozenTokenId[tokenId][account] = freeze;
 
         // Event
-        emit UpdateFrozenShareType(id, account, freeze);
+        emit UpdateFrozenTokenId(tokenId, account, freeze);
     }
 
-    // Freeze a portion of shares for a batch of accounts
+    /**
+     * @dev Freeze a portion of shares for a batch of accounts.
+     * @param tokenIds An array of the token IDs. 
+     * @param accounts An array of user addresses.
+     * @param amounts An array of the integer amounts of shares to be frozen for each address.
+     */
     function batchFreezeShares(
-        uint256[] memory ids,
+        uint256[] memory tokenIds,
         address[] memory accounts,
         uint256[] memory amounts
     )
         public
-        equalIdsAccountsAmounts(ids, accounts, amounts)
+        equalIdsAccountsAmounts(tokenIds, accounts, amounts)
     {
         for (uint256 i = 0; i < accounts.length; i++)
-            freezeShares(ids[i], accounts[i], amounts[i]);
+            freezeShares(tokenIds[i], accounts[i], amounts[i]);
     }
 
-    // Freeze a portion of shares for a single account
+    /**
+     * @dev Freeze a specific amount of shares on an account.
+     * @param tokenId The token ID to freeze tokens for.
+     * @param account The account to freeze tokens for.
+     * @param amount The amount of tokens to freeze.
+     */
     function freezeShares(
-        uint256 id,
+        uint256 tokenId,
         address account,
         uint256 amount
     )
         public
         onlyShareOrOwner
-        sufficientUnfrozenShares(id, account, amount)
+        sufficientUnfrozenShares(tokenId, account, amount)
     {
-        _frozenShares[id][account] = _frozenShares[id][account] + (amount);
-        emit SharesFrozen(id, account, amount);
+        _frozenShares[tokenId][account] = _frozenShares[tokenId][account] + (amount);
+
+        // Event
+        emit SharesFrozen(tokenId, account, amount);
     }
 
     //////////////////////////////////////////////
     // CHECKS
     //////////////////////////////////////////////
 
+    /**
+     * @dev Returns boolean as to if a batch of transfers are viable and do not violate any transfer limits.
+     * @param from The transfering address. 
+     * @param to The receiving address. 
+     * @param tokenIds An array of token IDs for the tokens to transfer.
+     * @param amounts An array of integer amounts for each of the token IDs in the token transfer.
+     */
     function checkCanTransferBatch(
         address from,
         address to,
-        uint256[] memory ids,
+        uint256[] memory tokenIds,
         uint256[] memory amounts
     )
         public 
         view 
         returns (bool)
     {
-        for (uint256 i = 0; i < ids.length; i++) {
-            checkCanTransfer(from, to, ids[i], amounts[i]);
-        }
+        for (uint256 i = 0; i < tokenIds.length; i++)
+            checkCanTransfer(from, to, tokenIds[i], amounts[i]);
+    
         return true;
     }
     
-    // Return bool if the transfer passes
+    /**
+     * @dev Returns boolean as to if a transfer is viable and does not violate any transfer limits.
+     * @param from The transfering address. 
+     * @param to The receiving address. 
+     * @param tokenId The ID of the token to transfer.
+     * @param amount The amount of tokens to transfer.
+     */
     function checkCanTransfer(
-        address to,
         address from,
-        uint256 id,
+        address to,
+        uint256 tokenId,
         uint256 amount
     )
         public
@@ -399,43 +567,56 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         if (!checkIsNotFrozenAllTransfer(from, to))
             revert AccountFrozen();
 
-        if (!checkIsNotFrozenShareTypeTransfer(id, from, to))
+        if (!checkIsNotFrozenTokenIdTransfer(from, to, tokenId))
             revert FrozenSharesAccount();
 
-        if (!checkIsNotFrozenSharesTransfer(amount, id, from))
+        if (!checkIsNotFrozenSharesTransfer(from, tokenId, amount))
             revert ExceedsUnfrozenBalance();
 
-        if (!checkIsWithinShareholderLimit(id))
+        if (!checkIsWithinShareholderLimit(tokenId))
             revert ExceedsMaximumShareholders();
 
-        if (!checkIsAboveMinimumShareholdingTransfer(to, from, id, amount))
+        if (!checkIsAboveMinimumShareholdingTransfer(from, to, tokenId, amount))
             revert BelowMinimumShareholding();
 
-        if (!checkIsNonDivisibleTransfer(to, from, id, amount))
+        if (!checkIsNonDivisibleTransfer(from, to, tokenId, amount))
             revert ShareDivision();
 
         return true;
     }
 
-    // Checks that the transfer amount does not exceed the current max shareholders
+    /**
+     * @dev Returns boolean as to if the transfer does not create an amount of shareholders that exceeds
+     * the shareholder limit.
+     *
+     * @param tokenId Token ID to check the shareholder limit against.
+     */
     function checkIsWithinShareholderLimit(
-        uint256 id
+        uint256 tokenId
     )
         public
         view
         returns (bool)
     {
-        if (_shareholderLimit[id] < _shareholders[id].length + 1)
+        if (_shareholderLimit[tokenId] < _shareholders[tokenId].length + 1)
             return true;
         else 
             return false;
     }
 
-    // #TODO desc
+    /**
+     * @dev Returns boolean as to if the transfer does not result in shareholdings that fall below the minimum
+     * shareholding per investor for the share type. 
+     *
+     * @param from The transfering address. 
+     * @param to The receiving address. 
+     * @param tokenId The ID of the token to transfer.
+     * @param amount The amount of tokens to transfer
+     */
     function checkIsAboveMinimumShareholdingTransfer(
-        address to,
         address from,
-        uint256 id,
+        address to,
+        uint256 tokenId,
         uint256 amount
     )
         public
@@ -444,31 +625,33 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     {   
         // Standard transfer
         if (from != address(0) && to != address(0)) 
-            if (checkIsAboveMinimumShareholding(id, _share.balanceOf(to, id) - amount) && checkIsAboveMinimumShareholding(id, _share.balanceOf(from, id) + amount))
+            if (checkIsAboveMinimumShareholding(tokenId, _share.balanceOf(to, tokenId) - amount) && checkIsAboveMinimumShareholding(tokenId, _share.balanceOf(from, tokenId) + amount))
                 return true;    
-            else
-                return false;
         // Mint
         else if (from == address(0) && to != address(0))
-            if (checkIsAboveMinimumShareholding(id, _share.balanceOf(to, id) + amount))
+            if (checkIsAboveMinimumShareholding(tokenId, _share.balanceOf(to, tokenId) + amount))
                 return true;
-            else
-                return false;
         // Burn
         else if (from != address(0) && to == address(0))
-            if (checkIsAboveMinimumShareholding(id, _share.balanceOf(from, id) - amount))
+            if (checkIsAboveMinimumShareholding(tokenId, _share.balanceOf(from, tokenId) - amount))
                 return true;
-            else
-                return false;
-        else 
-            return false;
+                
+        return false;
     }
 
-    // #TODO desc
+    /**
+     * @dev Returns boolean as to if the transfer does not result in non-divisible shares if non-divisibility
+     * is are enforced on the share type.
+     *
+     * @param from The transfering address. 
+     * @param to The receiving address. 
+     * @param tokenId The ID of the token to transfer.
+     * @param amount The amount of tokens to transfer
+     */
     function checkIsNonDivisibleTransfer(
-        address to,
         address from,
-        uint256 id,
+        address to,
+        uint256 tokenId,
         uint256 amount
     )
         public
@@ -476,22 +659,22 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         returns (bool)
     {   
         // If enforcing non-divisisibility
-        if (_shareholdingNonDivisible[id]) {
+        if (_shareholdingNonDivisible[tokenId]) {
             // Standard transfer
             if (from != address(0) && to != address(0)) 
-                if (checkIsNonDivisible(_share.balanceOf(to, id) - amount) && checkIsNonDivisible(_share.balanceOf(from, id) + amount))
+                if (checkIsNonDivisible(_share.balanceOf(to, tokenId) - amount) && checkIsNonDivisible(_share.balanceOf(from, tokenId) + amount))
                     return true;
                 else
                     return false;    
             // Mint
             else if (from == address(0) && to != address(0))
-                if (checkIsNonDivisible(_share.balanceOf(to, id) + amount))
+                if (checkIsNonDivisible(_share.balanceOf(to, tokenId) + amount))
                     return true;
                 else
                     return false;
             // Burn
             else if (from != address(0) && to == address(0))
-                if (checkIsNonDivisible(_share.balanceOf(from, id) - amount))
+                if (checkIsNonDivisible(_share.balanceOf(from, tokenId) - amount))
                     return true;
                 else
                     return false;
@@ -502,7 +685,11 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
             return true;   
     }
 
-    // Check is not frozen for all
+    /**
+     * @dev Returns boolean as to if the transfer does not result in taking actions from a frozen account.
+     * @param from The transfering address. 
+     * @param to The receiving address. 
+     */
     function checkIsNotFrozenAllTransfer(
         address from,
         address to
@@ -517,27 +704,39 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
             return false;  
     }
     
-    // Return bool address and tokens are not frozen for token id
-    function checkIsNotFrozenShareTypeTransfer(
-        uint256 id,
+    /**
+     * @dev Returns boolean as to if the transfer does not result in taking actions from accounts where
+     * the share type is frozen.
+     *
+     * @param from The transfering address. 
+     * @param to The receiving address. 
+     * @param tokenId The ID of the token to transfer.
+     */
+    function checkIsNotFrozenTokenIdTransfer(
         address from,
-        address to
+        address to,
+        uint256 tokenId
     )
         public
         view
         returns (bool)
     {
-        if (!_frozenShareType[id][to] && !_frozenShareType[id][from])
+        if (!_frozenTokenId[tokenId][to] && !_frozenTokenId[tokenId][from])
             return true;  
         else
             return false;  
     }
 
-    // #TODO desc
+    /**
+     * @dev Returns boolean as to if the transfer attemp to transfer frozen shares.
+     * @param from The transfering address. 
+     * @param tokenId The ID of the token to transfer.
+     * @param amount The amount of tokens to transfer
+     */
     function checkIsNotFrozenSharesTransfer(
-        uint256 amount,
-        uint256 id,
-        address from
+        address from,
+        uint256 tokenId,
+        uint256 amount
     )
         public
         view
@@ -545,7 +744,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
 
     {
         if (from != address(0)) {
-            if (amount <= (_share.balanceOf(from, id) - _frozenShares[id][from]))
+            if (amount <= (_share.balanceOf(from, tokenId) - _frozenShares[tokenId][from]))
                 return true;  
             else
                 return false;  
@@ -554,7 +753,10 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
             return true; 
     }
 
-    // Return frozen all
+    /**
+     * @dev Returns boolean as to if the account has been frozen across all tokens.
+     * @param account The account address to check frozen status on. 
+     */
     function checkFrozenAll(   
         address account
     )
@@ -565,7 +767,12 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         return _frozenAll[account];
     }
 
-    // Return bool that modulus of the transfer amount is equal to one (with the standard eighteen decimal places) 
+    /**
+     * @dev Returns boolean as to if the modulus of the transfer amount is equal to one (with the standard
+     * eighteen decimal places).
+     *
+     * @param amount The amount of tokens to transfer
+     */
     function checkIsNonDivisible(
         uint256 amount
     )
@@ -579,16 +786,20 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
             return false;
     }
 
-    // Checks value exceeds minimum shareholding
+    /**
+     * @dev Returns boolean as to if the amount exceeds the minimum shareholding for the token.
+     * @param tokenId The ID of the token to transfer.
+     * @param amount The amount of tokens to transfer
+     */
     function checkIsAboveMinimumShareholding(
-        uint256 id,
+        uint256 tokenId,
         uint256 amount
     )
         public
         view
         returns (bool)
     {
-        if (_shareholdingMinimum[id] <= amount)
+        if (_shareholdingMinimum[tokenId] <= amount)
             return true;   
         else
             return false;
@@ -598,7 +809,10 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     // SETTERS
     //////////////////////////////////////////////
 
-    // Sets the hypershare contract
+    /**
+     * @dev Sets the hypershare contract.
+     * @param share The address of the Hypershare contract.
+     */
     function setShare(
         address share
     )
@@ -611,7 +825,10 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         emit UpdatedHypershare(share);
     }
 
-    // Sets the identity registry contract
+    /**
+     * @dev Sets the identity registry contract.
+     * @param identity The address of the HyperbaseIdentityRegsitry contract.
+     */
     function setIdentities(
         address identity
     )
@@ -624,145 +841,170 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         emit UpdatedHyperbaseIdentityregistry(identity);
     }
 
-    // Sets the holder limit
+    /**
+     * @dev Sets the maximum shareholder limit.
+     * @param tokenId The token ID to set the holder limit on.
+     * @param holderLimit The maximum number of shareholders.
+     */
     function setShareholderLimit(
-        uint256 holderLimit,
-        uint256 id
+        uint256 tokenId, 
+        uint256 holderLimit
     )
         public
         onlyShareOrOwner
-        notLessThanHolders(holderLimit, id)
+        notLessThanHolders(tokenId, holderLimit)
     {
         // Set holder limit
-        _shareholderLimit[id] = holderLimit;
+        _shareholderLimit[tokenId] = holderLimit;
 
         // Event
-        emit ShareholderLimitSet(id, holderLimit);
+        emit ShareholderLimitSet(tokenId, holderLimit);
     }
     
-    // Sets the minimum shareholding on transfers
+    /**
+     * @dev Sets the minimum shareholding on transfers.
+     * @param tokenId The token ID to set the minimum shareholding on.
+     * @param minimumAmount The minimum amount of shares per shareholder.
+     */
     function setShareholdingMinimum(
-        uint256 id,
+        uint256 tokenId,
         uint256 minimumAmount
     )
         public
         onlyShareOrOwner
     {
         // Set minimum
-        _shareholdingMinimum[id] = minimumAmount;
+        _shareholdingMinimum[tokenId] = minimumAmount;
 
         // Event
-        emit MinimumShareholdingSet(id, minimumAmount);
+        emit MinimumShareholdingSet(tokenId, minimumAmount);
     }
 
-    // WARNING! This is extremely hard to reverse
-    // Set transfers that are not modulus zero e18
+    /** 
+     * @dev Set transfers that are not modulus zero e18. WARNING! It is extremely hard to reverse once it has been set to false.
+     * @param tokenId The token ID to set the divisibility status on.
+     * @param nonDivisible The boolean as to if the share type is divisible.
+     */
     function setNonDivisible(
-        uint256 id
+        uint256 tokenId,
+        bool nonDivisible
     )
         public
         onlyShareOrOwner 
     {
-        if (!_shareholdingNonDivisible[id]) {
-            
-            // Set divisibleity
-            _shareholdingNonDivisible[id] = true;
+        // Set divisibleity
+        _shareholdingNonDivisible[tokenId] = nonDivisible;
 
-            // Event
-            emit NonDivisible(id, true);
-        }
-        else if (_shareholdingNonDivisible[id]) {
-            
-            // Set divisibleity
-            _shareholdingNonDivisible[id] = false;
-
-            // Event
-            emit NonDivisible(id, false);
-        }
+        // Event
+        emit NonDivisible(tokenId, nonDivisible);
     }
 
     //////////////////////////////////////////////
     // GETTERS
     //////////////////////////////////////////////
 
-    // Gets address of shareholder by index
+    /**
+     * @dev Returns the address of shareholder by index.
+     * @param tokenId The token ID to query.
+     * @param index The shareholder index.
+     */
     function getHolderAt(
-        uint256 index,
-        uint256 id
+        uint256 tokenId,
+        uint256 index
     )
         public
         view
         returns (address)
     {
-        return _shareholders[id][index];
+        return _shareholders[tokenId][index];
     }
 
-    // Returns the shareholder for investor transfers
+    /**
+     * @dev Returns the shareholder limit for investor transfers.
+     * @param tokenId The token ID to query.
+     */
     function getShareholderLimit(
-        uint256 id
+        uint256 tokenId
     )
         public
         view
         returns (uint256)
     {
-        return _shareholderLimit[id];
+        return _shareholderLimit[tokenId];
     }
 
-    // Return the number of shareholders by country
+    /**
+     * @dev Returns the number of shareholders by country.
+     * @param tokenId The token ID to query.
+     * @param country The country to return number of shareholders for.
+     */
     function getShareholderCountByCountry(
-        uint256 id,
+        uint256 tokenId,
         uint16 country
     )
         public
         view
         returns (uint256)
     {
-        return _shareholderCountries[id][country];
+        return _shareholderCountries[tokenId][country];
     }
 
-    // Return the number of shareholders
+    /**
+     * @dev Returns the number of shareholders.
+     * @param tokenId The token ID to query.
+     */
     function getShareholderCount(
-        uint256 id
+        uint256 tokenId
     )
         public
         view
         returns (uint256)
     {
-        return _shareholders[id].length;
+        return _shareholders[tokenId].length;
     }
 
-    // Returns the minimum shareholding
+    /**
+     * @dev Returns the minimum shareholding.
+     * @param tokenId The token ID to query.
+     */
     function getShareholdingMinimum(
-        uint256 id
+        uint256 tokenId
     )
         public
         view
         returns (uint256)
     {
-        return _shareholdingMinimum[id];
+        return _shareholdingMinimum[tokenId];
     }
 
-    // Returns bool y/n share type is non-divisible 
+    /**
+     * @dev Returns bool y/n share type is non-divisible. 
+     * @param tokenId The token ID to query.
+     */
     function getNonDivisible(
-        uint256 id
+        uint256 tokenId
     )
         public
         view
         returns (bool)
     {
-        return _shareholdingNonDivisible[id];
+        return _shareholdingNonDivisible[tokenId];
     }
 
-    // Returns frozen shares of an account
+    /**
+     * @dev Returns frozen shares of an account.
+     * @param account The account to return number of frozen shares for.
+     * @param tokenId The token ID to query.
+     */
     function getFrozenShares(
         address account,
-        uint256 id
+        uint256 tokenId
     )
         public
         view
         returns (uint256)
     {
-        return _frozenShares[id][account];
+        return _frozenShares[tokenId][account];
     }
    
 }

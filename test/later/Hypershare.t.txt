@@ -10,8 +10,6 @@ import "./utils/Utils.sol";
 import "../src/Hypershare/Hypershare.sol";
 import "../src/Hypershare/HypershareRegistry.sol";
 
-// #TODO: Write static tests and then make dynamic
-
 contract HypershareTest is Test {
     
     Hypershare public _hypershare;
@@ -29,7 +27,12 @@ contract HypershareTest is Test {
         // Get utils
         _utils = new Utils();
 
-        generateShareholdersAndShares(); // #TODO: Make dynamic
+        // Create testing payees
+        _shareholders = _utils.createUsers(_noShareholders);
+
+        // For number of payees give each a share of 1
+        for (uint256 i = 0; i < _noShareholders; i++)
+            _shares.push(100 ether);
 
         // Set up contracts
         _hypershare = new Hypershare(
@@ -44,18 +47,6 @@ contract HypershareTest is Test {
         );
 
 	    _hypershare.setRegistry(address(_registry));
-
-    }
-
-    function generateShareholdersAndShares() public {
-
-        // Create testing payees
-        _shareholders = _utils.createUsers(_noShareholders);
-
-        // For number of payees give each a share of 1
-        for (uint256 i = 0; i < _noShareholders; i++)
-            _shares.push(100 ether);
-
     }
 
     function testNewToken() public {
@@ -64,20 +55,20 @@ contract HypershareTest is Test {
 
         uint256 _maxNoShareholders = 5;
         uint256 _minimumShareholding = 5 ether;
-        bool _shareholdingNonFractional = true;
+        bool _shareholdingNonDivisible = true;
         
         _hypershare.newToken(
             _maxNoShareholders,
 		    _minimumShareholding,
-            _shareholdingNonFractional
+            _shareholdingNonDivisible
 	    );
 
         uint256 id = startingTokens + 1;
 
-        assertTrue(_hypershare.getTotalTokens() == id, "testNewToken: incorrect token id");
+        assertTrue(_hypershare.getTotalTokens() == id, "testNewToken: incorrect token ID");
         assertTrue(_registry.getShareholderLimit(id) == _maxNoShareholders, "testNewToken: incorrect: _maxNoShareholders");
         assertTrue(_registry.getShareholdingMinimum(id) == _minimumShareholding, "testNewToken: incorrect: _minimumShareholding");
-        // assertTrue(_registry.checkNonFractional(id) == _shareholdingNonFractional, "testNewToken: incorrect: _shareholdingNonFractional");
+        // assertTrue(_registry.checkNonDivisible(id) == _shareholdingNonDivisible, "testNewToken: incorrect: _shareholdingNonDivisible");
 
     }
     
@@ -144,7 +135,7 @@ contract HypershareTest is Test {
 
         testMintGroup();
 
-        _registry.setFrozenShareType(_hypershare.getTotalTokens(), _shareholders[0], true);
+        _registry.setFrozenTokenId(_hypershare.getTotalTokens(), _shareholders[0], true);
 
         uint256 startBalance = _hypershare.balanceOf(_shareholders[1], 0);
 
@@ -214,7 +205,7 @@ contract HypershareTest is Test {
         require(checkIsNotFrozenSharesTransfer(amount, id, from), "HypershareRegistry: Insufficient unfrozen Balance");
         require(checkIsWithinShareholderLimit(id), "HypershareRegistry: Transfer exceeds shareholder limit");
         require(checkIsAboveMinimumShareholdingTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in shareholdings below minimum");
-        require(checkIsNonFractionalTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in fractional shares");
+        require(checkIsNonDivisibleTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in fractional shares");
 
     */
 }

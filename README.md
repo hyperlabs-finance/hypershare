@@ -234,7 +234,7 @@ In this example, we use a token holders agreement. The steps to create a smart l
 	2. This data is then used to create a structured metadata model using JSON.
 	3. A new token is created in the Hypershare token contract with a unique identifier.
 	4. The metadata model is updated with a reference to the unique identifier of the token.
-	5. The compliance contract is updated with the terms of the agreement to be enforced on-chain from the structured data model, referencing the token identifier.
+	5. The compliance contract is updated with the terms of the agreement to be enforced on-chain from the structured data model, referencing the token IDentifier.
 	6. The metadata is used to render the legal agreement in Markdown.
 	7. The legal Markdown file is uploaded to IPFS.
 	8. The metadata is updated with the legal agreement IPFS URI.

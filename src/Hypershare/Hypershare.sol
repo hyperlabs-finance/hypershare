@@ -3,16 +3,33 @@
 pragma solidity ^0.8.6;
 
 // Inheriting
-import '../Interface/IHypershare.sol';
+import '../interface/IHypershare.sol';
 import "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
 import "openzeppelin-contracts/contracts/token/ERC1155/extensions/ERC1155Pausable.sol";
 import "openzeppelin-contracts/contracts/access/Ownable.sol";
 
-// Calling interfaces
-import '../Interface/IHypershareCompliance.sol';
-import '../Interface/IHypershareRegistry.sol';
+// Interfaces
+import '../interface/IHypershareCompliance.sol';
+import '../interface/IHypershareRegistry.sol';
 
-// #TODO: burn and reissue
+/**
+
+    Hypershare is an ERC1155 based tokenised equity contract. It provides all the functions
+    traditionally associated with an ERC1155 token contract, plus additional issuer controls
+    designed (and legally required in some jurisdictions) to support for equity shares. These
+    features include forced transfers and share recovery in the event that a shareholder has 
+    lost wallet access to their wallet.
+
+    Hypershare also features a sophisticated suite of compliance checks via its peripheral 
+    contracts and the broader Hypersurface protocol. The checks are intended to reduce the 
+    burden on token issuers while helping to increase asset transferability, with the view of 
+    creating a liquid, highly automated secondary market for equity shares.
+
+    Although Hypershare was designed with the objective of providing an open and accesible 
+    standard and platform for equity tokenisation, the contracts themselves are flexibile enough
+    to support almost any type of real world asset. 
+
+ */
 
 contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 
@@ -20,17 +37,23 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     // INTERFACES
     ////////////////
 
-    // The compliance claims checker
+    /**
+     * @dev The compliance claims checker contract. 
+     */
     IHypershareCompliance public _compliance;
 
-    // External registry of shareholders, delegates and frozen accounts / shares
+    /**
+     * @dev The shareholder registry for this Hypershare contract.
+     */
     IHypershareRegistry public _registry;
 
     ////////////////
     // STATE
     ////////////////
 
-    // Total tokens, incremented value used for token id
+    /**
+     * @dev Total tokens, incremented value used to get the most recent/next token ID.
+     */
     uint256 _totalTokens;
 
     ////////////////
@@ -56,12 +79,24 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     // MODIFIERS
     ////////////////
 
-    modifier transferToZeroAddress(address to) {
+    /**
+     * @dev Prevents token transfers to the zero address.
+     * @param to The receiving address.
+     */
+    modifier transferToZeroAddress(
+        address to
+    ) {
         if (to == address(0))
             revert TransferToZeroAddress();
         _;
     }
 
+    /**
+     * @dev Ensures the sender has sufficient tokens for a token transfer.
+     * @param from The transfering address. 
+     * @param id The id of the token transfer.
+     * @param amount The amount of tokens to transfer.
+     */
     modifier sufficientTokens(
         address from,
         uint256 id,
@@ -73,32 +108,77 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         _;
     } 
 
-    modifier equalAccountsAmmounts(
+    /**
+     * @dev Ensures that the array of accounts and amounts are of equal length.
+     * @param accounts An array of user addresses.
+     * @param amounts An array of the integer amounts.
+     */
+    modifier equalAccountsAmounts(
         address[] memory accounts,
         uint256[] memory amounts
     ) {
         if (accounts.length != amounts.length)
-            revert UnequalAccountsAmmounts();
+            revert UnequalAccountsAmounts();
         _;
     }
 
-    modifier mintToZeroAddress(address account) {
-        if (account == address(0))
-            revert MintToZeroAddress();
-        _;
-    }
-
-    modifier mintZeroTokens(uint256 amount) {
+    /**
+     * @dev Ensures that mint amount is non-zero.
+     * @param amount The amount of token transfer.
+     */
+    modifier mintZeroTokens(
+        uint256 amount
+    ) {
         if (amount == 0)
             revert MintZeroTokens();
         _;
     }
 
     //////////////////////////////////////////////
+    // CREATE NEW TOKEN
+    //////////////////////////////////////////////
+
+    /**
+     * @dev Create a new token by incrementing token ID and initizializing in the compliance contracts.
+     * @param shareholderLimit The maxium number of shareholders. 
+     * @param shareholdingMinimum The minimum amount of shares per shareholder. 
+     * @param shareholdingNonDivisible The boolean value as to if the share type is non-divisible. 
+     */
+    function newToken(
+        uint256 shareholderLimit,
+        uint256 shareholdingMinimum,
+        bool shareholdingNonDivisible
+    )
+        public
+        onlyOwner
+        returns (uint256)
+    {
+        // Increment tokens
+        _totalTokens++;
+
+        // Register the new token
+        _registry.newToken(_totalTokens, shareholderLimit, shareholdingMinimum, shareholdingNonDivisible);
+
+        // Event
+        emit NewToken(_totalTokens, shareholderLimit, shareholdingMinimum, shareholdingNonDivisible);
+
+        return _totalTokens;
+    }
+
+    //////////////////////////////////////////////
     // TRANSFERS
     //////////////////////////////////////////////
 
-	// Pre validate token transfer
+    /**
+     * @dev Pre validate the token transfer to ensure that the actual transfer will not fail under
+       the same conditions. 
+     *
+     * @param from The transfering address. 
+     * @param to The receiving address. 
+     * @param id The id of the token transfer.
+     * @param amount The amount of tokens to transfer.
+     * @param data Optional data field to include in events.
+     */
 	function checkTransferIsValid(
         address from,
         address to,
@@ -122,7 +202,16 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 		return true;
 	}
 	
-	// Forced batch transfer from
+    /** 
+     * @dev Owner-operator function to force a batch transfer from an address. May be used to burn
+     * and reissue if the share terms are updated.
+     *
+     * @param from The transfering address. 
+     * @param to The receiving address. 
+     * @param ids An array of token IDs for the token transfer.
+     * @param amounts An array of integer amounts for each token in the token transfer.
+     * @param data Optional data field to include in events.
+     */
     function forcedBatchTransferFrom(
         address from,
         address to,
@@ -138,7 +227,16 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         _safeBatchTransferFrom(from, to, ids, amounts, data);
     }
 
-	// Forced transfer from
+    /** 
+     * @dev Owner-operator function used to force a transfer from an address. Typically used in the
+     * case of share recovery.
+     *
+     * @param from The transfering address. 
+     * @param to The receiving address. 
+     * @param id The id of the token transfer.
+     * @param amount The amount of tokens to transfer.
+     * @param data Optional data field to include in events.
+     */
 	function forcedTransferFrom(
         address from,
         address to,
@@ -154,7 +252,12 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 		_safeTransferFrom(from, to, id, amount, data);
 	}
 
-	// Recover tokens 
+    /** 
+     * @dev Owner-operator function to burn and reissue shares in the event of a lost wallet.
+     * @param lostWallet The address of the wallet that contains the shares for reissue.
+     * @param newWallet The address of the wallet that reissued shares should be sent to.
+     * @param data Optional data field to include in events.
+    */
 	function recover(
         address lostWallet,
         address newWallet,
@@ -195,7 +298,15 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     // HOOKS
     //////////////////////////////////////////////
 
-	// Before transfer hook
+    /**
+     * @dev ERC-1155 before transfer hook. Used to validate the transfer with the compliance contracts. 
+     * @param operator The address of the contract owner/operator.
+     * @param from The transfering address. 
+     * @param to The receiving address. 
+     * @param ids An array of token IDs for the token transfer.
+     * @param amounts An array of integer amounts for each of the token IDs in the token transfer.
+     * @param data Optional data field to include in events.
+     */
     function _beforeTokenTransfer(
         address operator,
         address from,
@@ -209,16 +320,26 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 	{
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
         
+        // Ensure that the receiver has the required claims.
         if (address(_compliance) != address(0))
             if (!_compliance.checkCanTransferBatch(to, from, ids, amounts))
                 revert RecieverInelligible();
 
+        // Ensure that the transfer does not violate any of the transfer limits.
         if (address(_registry) != address(0))
             if (!_registry.checkCanTransferBatch(to, from, ids, amounts))
                 revert TransferInelligible();
 	}
 
-	// After transfer hook
+    /**
+     * @dev ERC-1155 after transfer hook. Used to update the shareholder registry to reflect the transfer. 
+     * @param operator The address of the contract owner/operator.
+     * @param from The transfering address. 
+     * @param to The receiving address. 
+     * @param ids An array of token IDs for the token transfer.
+     * @param amounts An array of integer amounts for each of the token IDs in the token transfer.
+     * @param data Optional data field to include in events.
+     */
     function _afterTokenTransfer(
         address operator,
         address from,
@@ -239,7 +360,13 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     // MINT AND BURN 
     //////////////////////////////////////////////
 
-    // Mint shares to a group
+    /**
+     * @dev Mint shares to a group of receiving addresses. 
+     * @param accounts An array of the recieving accounts.
+     * @param id The token ID to mint.
+     * @param amounts An array of the amount to mint to each receiver.
+     * @param data Optional data field to include in events.
+     */
     function mintGroup(
         address[] memory accounts,
         uint256 id,
@@ -248,14 +375,19 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     )
         public
         onlyOwner
-        equalAccountsAmmounts(accounts, amounts)
+        equalAccountsAmounts(accounts, amounts)
     {
-        for (uint256 i = 0; i < accounts.length; i++) {
+        for (uint256 i = 0; i < accounts.length; i++)
             mint(accounts[i], id, amounts[i], data);
-        }
     }
     
-    // Mint shares
+    /**
+     * @dev Mint shares to a receiving address. 
+     * @param account The receiving address.
+     * @param id The token ID to mint.
+     * @param amount The amount of shares to mint to the receiver.
+     * @param data Optional data field to include in events.
+     */
     function mint(
         address account,
         uint256 id,
@@ -264,10 +396,10 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     )
         public
         onlyOwner
-        mintToZeroAddress(account)
+        transferToZeroAddress(account)
         mintZeroTokens(amount)
     {
-        // Burn
+        // Mint
         _mint(account, id, amount, data);
 
         // Updates
@@ -277,7 +409,13 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         emit MintTokens(account, id, amount, data);
     }
 
-    // Burn shares from a group
+    /**
+     * @dev Burn shares from a group of shareholder addresses. 
+     * @param accounts An array of the accounts to burn shares from.
+     * @param id The token ID to burn.
+     * @param amounts An array of the amounts of shares to burn from each account.
+     * @param data Optional data field to include in events.
+     */
     function burnGroup(
         address[] memory accounts,
         uint256 id,
@@ -286,14 +424,20 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     )
         public
         onlyOwner
-        equalAccountsAmmounts(accounts, amounts)
+        equalAccountsAmounts(accounts, amounts)
     {
         for (uint256 i = 0; i < accounts.length; i++) {
             burn(accounts[i], id, amounts[i], data );
         }
     }
 
-    // Burn shares
+    /**
+     * @dev Burn shares from a shareholder address. 
+     * @param account The account shares are being burnt from.
+     * @param id The token ID to mint to receiver.
+     * @param amount The amount of tokens to burn from the account.
+     * @param data Optional data field to include in events.
+     */
     function burn(
         address account,
         uint256 id,
@@ -314,33 +458,15 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     }
 
     //////////////////////////////////////////////
-    // CREATE NEW TOKEN
-    //////////////////////////////////////////////
-
-    // Create token
-    function newToken(
-        uint256 shareholderLimit,
-        uint256 shareholdingMinimum,
-        bool shareholdingNonDivisible
-    )
-        public
-        onlyOwner
-        returns (uint256)
-    {
-        _totalTokens++;
-
-        _registry.newToken(_totalTokens, shareholderLimit, shareholdingMinimum, shareholdingNonDivisible);
-
-        emit NewToken(_totalTokens, shareholderLimit, shareholdingMinimum, shareholdingNonDivisible);
-
-        return _totalTokens;
-    }
-
-    //////////////////////////////////////////////
     // SETTERS
     //////////////////////////////////////////////
 
-    // Set compliance
+    /** 
+     * @dev Set the address of the compliance contract. Complaince checks the claims of the receiver to
+     * ensure their elligibility.
+     *
+     * @param compliance The new compliance contract address. 
+     */
     function setCompliance(
         address compliance
     ) 
@@ -352,7 +478,12 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         emit UpdatedHypershareCompliance(compliance);  
     }
 
-	// Set registry
+    /** 
+     * @dev Set the address of the registry contract. Registry records the token shareholders on chain 
+     * and enforces limit-based transfer restrictions.
+     *
+     * @param registry The new registry contract address. 
+     */
 	function setRegistry(
         address registry
     )
@@ -368,7 +499,9 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     // GETTERS
     //////////////////////////////////////////////
 
-    // Get total tokesn
+    /** 
+     * @dev Returns the total token count where token IDs are incremental values.
+     */
     function getTotalTokens()
         public
         view 

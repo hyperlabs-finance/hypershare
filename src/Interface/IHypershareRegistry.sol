@@ -172,12 +172,12 @@ interface IHypershareRegistry {
     function checkCanTransfer(address from, address to, uint256 tokenId, uint256 amount) external view returns (bool);
     function checkIsWithinShareholderLimit(uint256 tokenId) external view returns (bool);
     function checkIsAboveMinimumShareholdingTransfer(address from, address to, uint256 tokenId, uint256 amount) external view returns (bool);
-    function checkIsNonDivisibleTransfer(address from, address to, uint256 tokenId, uint256 amount) external view returns (bool);
+    function checkIsAmountNonDivisibleTransfer(address from, address to, uint256 tokenId, uint256 amount) external view returns (bool);
     function checkIsNotFrozenAllTransfer(address from, address to) external view returns (bool);
     function checkIsNotFrozenTokenIdTransfer(address from, address to, uint256 tokenId) external view returns (bool);
     function checkIsNotFrozenSharesTransfer(address from, uint256 tokenId, uint256 amount) external view returns (bool);
     function checkFrozenAll(address account) external view returns (bool);
-    function checkIsNonDivisible(uint256 amount) external pure returns (bool);
+    function checkIsAmountNonDivisible(uint256 amount) external pure returns (bool);
     function checkIsAboveMinimumShareholding(uint256 tokenId, uint256 amount) external  view  returns (bool);
     
     //////////////////////////////////////////////
@@ -198,7 +198,7 @@ interface IHypershareRegistry {
     function getShareholderCount(uint256 tokenId) external view returns (uint256);
     function getShareholderCountByCountry(uint256 tokenId, uint16 country) external view returns (uint256);
     function getShareholdingMinimum(uint256 tokenId) external view returns (uint256);
-    function getNonDivisible(uint256 tokenId) external view returns (bool);
+    function checkNonDivisible(uint256 tokenId) external view returns (bool);
     function getFrozenShares(address account, uint256 tokenId) external view returns (uint256);
     
 }

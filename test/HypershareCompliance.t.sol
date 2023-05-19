@@ -157,7 +157,9 @@ contract HypershareComplianceTest is Test {
         
     }
 
-    
-    
+
+    // #TODO, with HB
+
+    // testCheckCanTransferBatch
 
 }

@@ -205,7 +205,7 @@ contract HypershareTest is Test {
         require(checkIsNotFrozenSharesTransfer(amount, id, from), "HypershareRegistry: Insufficient unfrozen Balance");
         require(checkIsWithinShareholderLimit(id), "HypershareRegistry: Transfer exceeds shareholder limit");
         require(checkIsAboveMinimumShareholdingTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in shareholdings below minimum");
-        require(checkIsNonDivisibleTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in fractional shares");
+        require(checkIsAmountNonDivisibleTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in fractional shares");
 
     */
 }

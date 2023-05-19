@@ -42,49 +42,49 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     /**
      * Mapping from token ID to the addresses of all shareholders.
      */
-    mapping(uint256 => address[]) public _shareholders;
+    mapping(uint256 => address[]) public _shareholdersByToken;
 
     /**
-     * Mapping from token ID to the index of each shareholder in the array `_shareholders`.
+     * Mapping from token ID to the exists status of the shareholder.
      */
-    mapping(uint256 => mapping(address => uint256)) public _shareholderIndices;
+    mapping(uint256 => mapping(address => bool)) public _shareholderExistsByAccountByToken;
 
     /**
-     * Mapping from token ID to the amount of _shareholders per country.
+     * Mapping from token ID to the country code to amount of _shareholders per country.
      */
-    mapping(uint256 => mapping(uint16 => uint256)) public _shareholderCountries;
+    mapping(uint256 => mapping(uint16 => uint256)) public _shareholderCountbyCountryByToken;
 
     /**
      * Mapping from token ID to the limit on the amount of shareholders for this token, when transfering 
      * between holders.
      */
-    mapping(uint256 => uint256) public _shareholderLimit;
+    mapping(uint256 => uint256) public _shareholderLimitByToken;
     
     /**
      * Mapping from token ID to minimum share holding, transfers that result in holdings that fall bellow 
      * the mininmum will fail.
      */
-    mapping(uint256 => uint256) public _shareholdingMinimum;
+    mapping(uint256 => uint256) public _shareholdingMinimumByToken;
     
     /**
      * Mapping from token ID to non-divisible bool, transfers that result in divisible holdings will fail.
      */
-    mapping(uint256 => bool) public _shareholdingNonDivisible;
+    mapping(uint256 => bool) public _shareholdingNonDivisibleByToken;
 
     /**
      * Mapping from account address to bool for frozen y/n across all tokens.
      */
-    mapping(address => bool) public _frozenAll;
+    mapping(address => bool) public _frozenByAccount;
 
     /**
      * Mapping from token ID to account address to bool for frozen y/n.
      */
-    mapping(uint256 => mapping(address => bool)) public _frozenTokenId;
+    mapping(uint256 => mapping(address => bool)) public _frozenByAccountByToken;
 
     /**
      * Mapping from token ID to mapping from account address to uint amount of shares frozen.
      */
-	mapping(uint256 => mapping(address => uint256)) public _frozenShares;
+	mapping(uint256 => mapping(address => uint256)) public _frozenSharesByAccountByToken;
 
     ////////////////
     // CONSTRUCTOR
@@ -191,7 +191,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         address account,
         uint256 amount
     ) {
-        if (_share.balanceOf(account, tokenId) <= (_frozenShares[tokenId][account] + amount))
+        if (_share.balanceOf(account, tokenId) <= (_frozenSharesByAccountByToken[tokenId][account] + amount))
             revert ExceedsUnfrozenBalance();
         _;
     }
@@ -342,10 +342,10 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     )
         public
     {
-        if (_shareholderIndices[tokenId][account] == 0) {
+        if (_shareholderExistsByAccountByToken[tokenId][account]) {
             _shareholders[tokenId].push(account);
-            _shareholderIndices[tokenId][account] = _shareholders[tokenId].length;
-            _shareholderCountries[tokenId][_identity.getCountryByAddress(account)]++;
+            _shareholderExistsByAccountByToken[tokenId][account] = true;
+            _shareholderCountbyCountryByToken[tokenId][_identity.getCountryByAddress(account)]++;
         }
     }
 
@@ -360,22 +360,18 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     )
         public
     {
-        if (from != address(0) && _shareholderIndices[tokenId][from] != 0) {
+        if (from != address(0) && _shareholderExistsByAccountByToken[tokenId][from]) {
             
-            // If shareholder still has shares
-            if (_share.balanceOf(from, tokenId) > 0)
-                return;
-        
-            // Else trim the indicies
-            uint256 holderIndex = _shareholderIndices[tokenId][from] - 1;
-            uint256 lastIndex = _shareholders[tokenId].length - 1;
-            address lastHolder = _shareholders[tokenId][lastIndex];
-            _shareholders[tokenId][holderIndex] = lastHolder;
-            _shareholderIndices[tokenId][lastHolder] = _shareholderIndices[tokenId][from];
-            _shareholders[tokenId].pop();
-            _shareholderIndices[tokenId][from] = 0;
-            _shareholderCountries[tokenId][_identity.getCountryByAddress(from)]--;
+            // If shareholder does not still have shares trim the indicies
+            if (_share.balanceOf(from, tokenId) == 0) {
 
+                for (uint8 i = 0; i < _shareholdersByToken[tokenId].length; i++)
+                    if (_shareholdersByToken[tokenId][i] == from)
+                        delete _shareholdersByToken[tokenId][i];
+
+                _shareholderExistsByAccountByToken[tokenId][from] = false;
+                _shareholderCountbyCountryByToken[tokenId][_identity.getCountryByAddress(from)]--;
+            }
         }
     }
 
@@ -393,10 +389,10 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         internal
     {
         if (account != address(0)) {
-            uint256 freeBalance = _share.balanceOf(account, tokenId) - (_frozenShares[tokenId][account]);
+            uint256 freeBalance = _share.balanceOf(account, tokenId) - (_frozenSharesByAccountByToken[tokenId][account]);
             if (amount > freeBalance) {
                 uint256 tokensToUnfreeze = amount - (freeBalance);
-                _frozenShares[tokenId][account] = _frozenShares[tokenId][account] - (tokensToUnfreeze);
+                _frozenSharesByAccountByToken[tokenId][account] = _frozenSharesByAccountByToken[tokenId][account] - (tokensToUnfreeze);
                 emit SharesUnfrozen(tokenId, account, tokensToUnfreeze);
             }
         }
@@ -475,7 +471,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         public
         onlyShareOrOwner 
     {
-        _frozenTokenId[tokenId][account] = freeze;
+        _frozenByAccountByToken[tokenId][account] = freeze;
 
         // Event
         emit UpdateFrozenTokenId(tokenId, account, freeze);
@@ -514,7 +510,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         onlyShareOrOwner
         sufficientUnfrozenShares(tokenId, account, amount)
     {
-        _frozenShares[tokenId][account] = _frozenShares[tokenId][account] + (amount);
+        _frozenSharesByAccountByToken[tokenId][account] = _frozenSharesByAccountByToken[tokenId][account] + (amount);
 
         // Event
         emit SharesFrozen(tokenId, account, amount);
@@ -579,7 +575,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         if (!checkIsAboveMinimumShareholdingTransfer(from, to, tokenId, amount))
             revert BelowMinimumShareholding();
 
-        if (!checkIsNonDivisibleTransfer(from, to, tokenId, amount))
+        if (!checkIsAmountNonDivisibleTransfer(from, to, tokenId, amount))
             revert ShareDivision();
 
         return true;
@@ -598,7 +594,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         view
         returns (bool)
     {
-        if (_shareholderLimit[tokenId] < _shareholders[tokenId].length + 1)
+        if (_shareholderLimitByToken[tokenId] < _shareholders[tokenId].length + 1)
             return true;
         else 
             return false;
@@ -648,7 +644,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
      * @param tokenId The ID of the token to transfer.
      * @param amount The amount of tokens to transfer
      */
-    function checkIsNonDivisibleTransfer(
+    function checkIsAmountNonDivisibleTransfer(
         address from,
         address to,
         uint256 tokenId,
@@ -659,22 +655,22 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         returns (bool)
     {   
         // If enforcing non-divisisibility
-        if (_shareholdingNonDivisible[tokenId]) {
+        if (_shareholdingNonDivisibleByToken[tokenId]) {
             // Standard transfer
             if (from != address(0) && to != address(0)) 
-                if (checkIsNonDivisible(_share.balanceOf(to, tokenId) - amount) && checkIsNonDivisible(_share.balanceOf(from, tokenId) + amount))
+                if (checkIsAmountNonDivisible(_share.balanceOf(to, tokenId) - amount) && checkIsAmountNonDivisible(_share.balanceOf(from, tokenId) + amount))
                     return true;
                 else
                     return false;    
             // Mint
             else if (from == address(0) && to != address(0))
-                if (checkIsNonDivisible(_share.balanceOf(to, tokenId) + amount))
+                if (checkIsAmountNonDivisible(_share.balanceOf(to, tokenId) + amount))
                     return true;
                 else
                     return false;
             // Burn
             else if (from != address(0) && to == address(0))
-                if (checkIsNonDivisible(_share.balanceOf(from, tokenId) - amount))
+                if (checkIsAmountNonDivisible(_share.balanceOf(from, tokenId) - amount))
                     return true;
                 else
                     return false;
@@ -721,7 +717,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         view
         returns (bool)
     {
-        if (!_frozenTokenId[tokenId][to] && !_frozenTokenId[tokenId][from])
+        if (!_frozenByAccountByToken[tokenId][to] && !_frozenByAccountByToken[tokenId][from])
             return true;  
         else
             return false;  
@@ -744,7 +740,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
 
     {
         if (from != address(0)) {
-            if (amount <= (_share.balanceOf(from, tokenId) - _frozenShares[tokenId][from]))
+            if (amount <= (_share.balanceOf(from, tokenId) - _frozenSharesByAccountByToken[tokenId][from]))
                 return true;  
             else
                 return false;  
@@ -768,12 +764,26 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
     }
 
     /**
+     * @dev Returns bool y/n share type is non-divisible. 
+     * @param tokenId The token ID to query.
+     */
+    function checkNonDivisible(
+        uint256 tokenId
+    )
+        public
+        view
+        returns (bool)
+    {
+        return _shareholdingNonDivisibleByToken[tokenId];
+    }
+    
+    /**
      * @dev Returns boolean as to if the modulus of the transfer amount is equal to one (with the standard
      * eighteen decimal places).
      *
      * @param amount The amount of tokens to transfer
      */
-    function checkIsNonDivisible(
+    function checkIsAmountNonDivisible(
         uint256 amount
     )
         public
@@ -799,7 +809,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         view
         returns (bool)
     {
-        if (_shareholdingMinimum[tokenId] <= amount)
+        if (_shareholdingMinimumByToken[tokenId] <= amount)
             return true;   
         else
             return false;
@@ -855,7 +865,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         notLessThanHolders(tokenId, holderLimit)
     {
         // Set holder limit
-        _shareholderLimit[tokenId] = holderLimit;
+        _shareholderLimitByToken[tokenId] = holderLimit;
 
         // Event
         emit ShareholderLimitSet(tokenId, holderLimit);
@@ -874,7 +884,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         onlyShareOrOwner
     {
         // Set minimum
-        _shareholdingMinimum[tokenId] = minimumAmount;
+        _shareholdingMinimumByToken[tokenId] = minimumAmount;
 
         // Event
         emit MinimumShareholdingSet(tokenId, minimumAmount);
@@ -893,7 +903,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         onlyShareOrOwner 
     {
         // Set divisibleity
-        _shareholdingNonDivisible[tokenId] = nonDivisible;
+        _shareholdingNonDivisibleByToken[tokenId] = nonDivisible;
 
         // Event
         emit NonDivisible(tokenId, nonDivisible);
@@ -930,7 +940,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         view
         returns (uint256)
     {
-        return _shareholderLimit[tokenId];
+        return _shareholderLimitByToken[tokenId];
     }
 
     /**
@@ -946,7 +956,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         view
         returns (uint256)
     {
-        return _shareholderCountries[tokenId][country];
+        return _shareholderCountbyCountryByToken[tokenId][country];
     }
 
     /**
@@ -974,21 +984,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         view
         returns (uint256)
     {
-        return _shareholdingMinimum[tokenId];
-    }
-
-    /**
-     * @dev Returns bool y/n share type is non-divisible. 
-     * @param tokenId The token ID to query.
-     */
-    function getNonDivisible(
-        uint256 tokenId
-    )
-        public
-        view
-        returns (bool)
-    {
-        return _shareholdingNonDivisible[tokenId];
+        return _shareholdingMinimumByToken[tokenId];
     }
 
     /**
@@ -1004,7 +1000,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
         view
         returns (uint256)
     {
-        return _frozenShares[tokenId][account];
+        return _frozenSharesByAccountByToken[tokenId][account];
     }
    
 }

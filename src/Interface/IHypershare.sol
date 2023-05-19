@@ -23,7 +23,7 @@ interface IHypershare is IERC1155 {
     /**
      * @dev Accounts and amounts are not equal.
      */
-    error UnequalAccountsAmmounts();
+    error UnequalAccountsAmounts();
 
     /**
      * @dev Exceeds holder transfer frozen.

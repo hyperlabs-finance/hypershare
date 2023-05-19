@@ -38,7 +38,7 @@ contract HypershareComplianceTest is Test {
         _shareholders = _utils.createUsers(_noShareholders);
 
         // Compliance 
-		_compliance = new HypershareCompliance(address(0));
+		_compliance = new HypershareCompliance(address(101));
 
     }
 
@@ -106,10 +106,58 @@ contract HypershareComplianceTest is Test {
 
     function testSetClaimRegistry() public {
 
-        _compliance.setClaimRegistry();
+        address currentClaimReg = _compliance.getClaimRegistry();
 
-        // #CARRY ON HERE
+        _compliance.setClaimRegistry(address(202));
+
+        address newClaimReg = _compliance.getClaimRegistry();
+
+        assertTrue(currentClaimReg != newClaimReg && newClaimReg == address(202), "Claims match");
         
     }
+
+    function testSetWhitelistedAll() public {
+        
+        bool prevWhitelisted = _compliance.checkIsWhitelistedAll(address(202));
+
+        assertTrue(prevWhitelisted == false, "Address is already whitelisted");
+
+        _compliance.setWhitelistedAll(address(202), true);
+
+        bool trueWhitelisted = _compliance.checkIsWhitelistedAll(address(202));
+        
+        assertTrue(trueWhitelisted == true, "Address is already whitelisted");
+
+        _compliance.setWhitelistedAll(address(202), false);
+
+        bool falseWhitelisted = _compliance.checkIsWhitelistedAll(address(202));
+        
+        assertTrue(falseWhitelisted == false, "Address is already whitelisted");
+    }
+
+    function testSetWhitelistedTokenId() public {
+
+        uint256 tokenId = 1001;
+
+        bool prevWhitelisted = _compliance.checkIsWhitelistedTokenId(tokenId, address(202));
+
+        assertTrue(prevWhitelisted == false, "Address is already whitelisted");
+
+        _compliance.setWhitelistedTokenId(tokenId, address(202), true);
+
+        bool trueWhitelisted = _compliance.checkIsWhitelistedTokenId(tokenId, address(202));
+
+        assertTrue(trueWhitelisted == true, "Address is already whitelisted");
+
+        _compliance.setWhitelistedTokenId(tokenId, address(202), false);
+
+        bool falseWhitelisted = _compliance.checkIsWhitelistedTokenId(tokenId, address(202));
+
+        assertTrue(falseWhitelisted == false, "Address is already whitelisted");
+        
+    }
+
+    
+    
 
 }

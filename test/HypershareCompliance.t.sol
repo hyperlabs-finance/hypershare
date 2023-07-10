@@ -118,19 +118,19 @@ contract HypershareComplianceTest is Test {
 
     function testSetWhitelistedAll() public {
         
-        bool prevWhitelisted = _compliance.checkIsWhitelistedAll(address(202));
+        bool prevWhitelisted = _compliance.checkWhitelistedAll(address(202));
 
         assertTrue(prevWhitelisted == false, "Address is already whitelisted");
 
         _compliance.setWhitelistedAll(address(202), true);
 
-        bool trueWhitelisted = _compliance.checkIsWhitelistedAll(address(202));
+        bool trueWhitelisted = _compliance.checkWhitelistedAll(address(202));
         
         assertTrue(trueWhitelisted == true, "Address is already whitelisted");
 
         _compliance.setWhitelistedAll(address(202), false);
 
-        bool falseWhitelisted = _compliance.checkIsWhitelistedAll(address(202));
+        bool falseWhitelisted = _compliance.checkWhitelistedAll(address(202));
         
         assertTrue(falseWhitelisted == false, "Address is already whitelisted");
     }
@@ -139,19 +139,19 @@ contract HypershareComplianceTest is Test {
 
         uint256 tokenId = 1001;
 
-        bool prevWhitelisted = _compliance.checkIsWhitelistedTokenId(tokenId, address(202));
+        bool prevWhitelisted = _compliance.checkWhitelistedTokenId(tokenId, address(202));
 
         assertTrue(prevWhitelisted == false, "Address is already whitelisted");
 
         _compliance.setWhitelistedTokenId(tokenId, address(202), true);
 
-        bool trueWhitelisted = _compliance.checkIsWhitelistedTokenId(tokenId, address(202));
+        bool trueWhitelisted = _compliance.checkWhitelistedTokenId(tokenId, address(202));
 
         assertTrue(trueWhitelisted == true, "Address is already whitelisted");
 
         _compliance.setWhitelistedTokenId(tokenId, address(202), false);
 
-        bool falseWhitelisted = _compliance.checkIsWhitelistedTokenId(tokenId, address(202));
+        bool falseWhitelisted = _compliance.checkWhitelistedTokenId(tokenId, address(202));
 
         assertTrue(falseWhitelisted == false, "Address is already whitelisted");
         

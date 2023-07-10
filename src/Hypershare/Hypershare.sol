@@ -18,16 +18,7 @@ import '../interface/IHypershareRegistry.sol';
     traditionally associated with an ERC1155 token contract, plus additional issuer controls
     designed (and legally required in some jurisdictions) to support for equity shares. These
     features include forced transfers and share recovery in the event that a shareholder has 
-    lost wallet access to their wallet.
-
-    Hypershare also features a sophisticated suite of compliance checks via its peripheral 
-    contracts and the broader Hypersurface protocol. The checks are intended to reduce the 
-    burden on token issuers while helping to increase asset transferability, with the view of 
-    creating a liquid, highly automated secondary market for equity shares.
-
-    Although Hypershare was designed with the objective of providing an open and accesible 
-    standard and platform for equity tokenisation, the contracts themselves are flexibile enough
-    to support almost any type of real world asset. 
+    lost access to their wallet.
 
  */
 

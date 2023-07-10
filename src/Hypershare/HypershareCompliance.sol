@@ -10,15 +10,15 @@ import '.././interface/IHypershareCompliance.sol';
 import '.././interface/IHyperbaseClaimRegistry.sol';
 
 /**
-
-    HypershareCompliance works in tandem with Hypershare and the HyperbaseClaimRegistry. 
-    HypershareCompliance records what attributes an prospective shareholder must have in order to
-    receive shares. These attributes are known as claims. When a share transfer is initiated the 
-    HypershareCompliance contract iterates through the neccesary claims, comparing them against
-    the claims held by the prospective shareholder in the HyperbaseClaimRegistry. 
+    
+    HypershareCompliance works in tandem with Hypershare and the HyperbaseClaimRegistry,
+    recording which attributes a prospective shareholder must have in order to receive
+    shares. These attributes are known as claims. Unless a user is whitelisted, when a
+    share transfer is initiated the HypershareCompliance contract iterates through the
+    necessary claims, comparing them against the claims held by the prospective
+    shareholder in the HyperbaseClaimRegistry. 
 
  */
-
 contract HypershareCompliance is IHypershareCompliance, Ownable {
 
   	////////////////
@@ -268,7 +268,7 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
                 
                 // Iterate through claims by tokenId and check validity
                 for (uint256 ii = 0; ii < claimIds.length; ii++)
-                    if (!_claimRegistry.checkIsClaimValidById(account, claimIds[ii]))
+                    if (!_claimRegistry.checkClaimValidById(account, claimIds[ii]))
                         return false;
             }
             return true;
@@ -279,7 +279,7 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
      * @dev Returns boolean as to if the user is in question has whitelisted status for all tokens.
      * @param account The account of the user to query.
      */
-    function checkIsWhitelistedAll(
+    function checkWhitelistedAll(
         address account
     )
         public
@@ -294,7 +294,7 @@ contract HypershareCompliance is IHypershareCompliance, Ownable {
      * @param tokenId The token to check for whitelisted status on. 
      * @param account The account of the user to query.
      */
-    function checkIsWhitelistedTokenId(
+    function checkWhitelistedTokenId(
         uint256 tokenId, 
         address account
     )

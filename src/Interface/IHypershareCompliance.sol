@@ -53,8 +53,8 @@ interface IHypershareCompliance {
     
     function checkCanTransferBatch(address from, address to, uint256[] memory ids, uint256[] memory amounts) external view returns (bool);
     function checkRecieverIsElligible(uint256 tokenId, address account) external view returns (bool);
-    function checkIsWhitelistedAll(address account) external view returns (bool);
-    function checkIsWhitelistedTokenId(uint256 tokenId, address account) external view returns (bool);
+    function checkWhitelistedAll(address account) external view returns (bool);
+    function checkWhitelistedTokenId(uint256 tokenId, address account) external view returns (bool);
 
     //////////////////////////////////////////////
     // GETTERS

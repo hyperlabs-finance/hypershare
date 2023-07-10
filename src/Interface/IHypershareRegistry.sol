@@ -170,15 +170,16 @@ interface IHypershareRegistry {
     
     function checkCanTransferBatch(address from, address to, uint256[] memory tokenIds, uint256[] memory amounts) external view returns (bool);
     function checkCanTransfer(address from, address to, uint256 tokenId, uint256 amount) external view returns (bool);
-    function checkIsWithinShareholderLimit(uint256 tokenId) external view returns (bool);
-    function checkIsAboveMinimumShareholdingTransfer(address from, address to, uint256 tokenId, uint256 amount) external view returns (bool);
-    function checkIsAmountNonDivisibleTransfer(address from, address to, uint256 tokenId, uint256 amount) external view returns (bool);
-    function checkIsNotFrozenAllTransfer(address from, address to) external view returns (bool);
-    function checkIsNotFrozenTokenIdTransfer(address from, address to, uint256 tokenId) external view returns (bool);
-    function checkIsNotFrozenSharesTransfer(address from, uint256 tokenId, uint256 amount) external view returns (bool);
+    function checkWithinShareholderLimit(uint256 tokenId) external view returns (bool);
+    function checkAboveMinimumShareholdingTransfer(address from, address to, uint256 tokenId, uint256 amount) external view returns (bool);
+    function checkAmountNonDivisibleTransfer(address from, address to, uint256 tokenId, uint256 amount) external view returns (bool);
+    function checkNotFrozenAllTransfer(address from, address to) external view returns (bool);
+    function checkNotFrozenTokenIdTransfer(address from, address to, uint256 tokenId) external view returns (bool);
+    function checkNotFrozenSharesTransfer(address from, uint256 tokenId, uint256 amount) external view returns (bool);
     function checkFrozenAll(address account) external view returns (bool);
-    function checkIsAmountNonDivisible(uint256 amount) external pure returns (bool);
-    function checkIsAboveMinimumShareholding(uint256 tokenId, uint256 amount) external  view  returns (bool);
+    function checkNonDivisible(uint256 tokenId) external view returns (bool);
+    function checkAmountNonDivisible(uint256 amount) external pure returns (bool);
+    function checkAboveMinimumShareholding(uint256 tokenId, uint256 amount) external  view  returns (bool);
     
     //////////////////////////////////////////////
     // SETTERS
@@ -198,7 +199,6 @@ interface IHypershareRegistry {
     function getShareholderCount(uint256 tokenId) external view returns (uint256);
     function getShareholderCountByCountry(uint256 tokenId, uint16 country) external view returns (uint256);
     function getShareholdingMinimum(uint256 tokenId) external view returns (uint256);
-    function checkNonDivisible(uint256 tokenId) external view returns (bool);
     function getFrozenShares(address account, uint256 tokenId) external view returns (uint256);
     
 }

@@ -56,9 +56,13 @@ contract HypershareRegistryTest is Test {
 
 		_registry.newToken(tokenId, shareholderLimit, shareholdingMinimum, shareholdingNonDivisible);
 
-		getShareholderLimit(tokenId);
+        uint256 newShareholderLimit = _registry.getShareholderLimit(tokenId);
+		uint256 newShareholdingMinimum = _registry.getShareholdingMinimum(tokenId);
+		bool newShareholdingNonDivisible = _registry.checkNonDivisible(tokenId);
 
-		getShareholdingMinimum(tokenId);
+		assertTrue(shareholderLimit == newShareholderLimit, "Shareholder limit mismatch");
+		assertTrue(shareholdingMinimum == newShareholdingMinimum, "Shareholding minimum mismatch");
+		assertTrue(shareholdingNonDivisible == newShareholdingNonDivisible, "Nondivisibible mismatch");
 	}
 
 }

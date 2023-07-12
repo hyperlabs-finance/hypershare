@@ -11,9 +11,9 @@ contract KaliDAOvesting is ReentrancyGuard {
     // EVENTS
     ////////////////
 
-    event ExtensionSet(address indexed dao, address[] accounts, uint256[] amounts, uint256[] startTimes, uint256[] endTimes);
+    event ExtensionSet(address indexed hypershare, address[] accounts, uint256[] amounts, uint256[] startTimes, uint256[] endTimes);
 
-    event ExtensionCalled(address indexed dao, uint256 vestingId, address indexed member, uint256 indexed amountOut);
+    event ExtensionCalled(address indexed hypershare, uint256 vestingId, address indexed member, uint256 indexed amountOut);
 
     ////////////////
     // ERRORS

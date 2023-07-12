@@ -8,6 +8,7 @@ Extensions:
 	Delegates
 	
 	Scrip
+		Minimal proxy erc20 factory
 
 	Signer
 	Direct sale
@@ -17,3 +18,7 @@ Extensions:
 Factory must provide way of selecting and adding Hypercores
 
 Access control in the Hypershare contract divided by token id 
+
+
+
+Create a hook/interface for services so that they can 

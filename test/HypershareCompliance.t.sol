@@ -39,7 +39,6 @@ contract HypershareComplianceTest is Test {
 
         // Compliance 
 		_compliance = new HypershareCompliance(address(101));
-
     }
 
     //////////////////////////////////////////////

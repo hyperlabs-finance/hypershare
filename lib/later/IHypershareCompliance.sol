@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.6;
 
-interface IHypershareCompliance {
+interface IHypercoreCompliance {
 
   	////////////////
     // ERRORS

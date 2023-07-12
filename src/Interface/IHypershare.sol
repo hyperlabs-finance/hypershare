@@ -62,7 +62,7 @@ interface IHypershare is IERC1155 {
     /**
      * @dev Added or updated the compliance claims contract.
      */
-    event UpdatedHypershareCompliance(address indexed compliance);  
+    event UpdatedHypercoreCompliance(address indexed compliance);  
     
     /**
      * @dev Successful transfer of shares to new investor wallet.

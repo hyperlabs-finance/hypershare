@@ -4,22 +4,22 @@ pragma solidity ^0.8.6;
 
 // Inherited
 import 'openzeppelin-contracts/contracts/access/Ownable.sol';
-import '.././interface/IHypershareCompliance.sol';
+import '.././interface/IHypercoreCompliance.sol';
 
 // Interfaces
 import '.././interface/IHyperbaseClaimRegistry.sol';
 
 /**
     
-    HypershareCompliance works in tandem with Hypershare and the HyperbaseClaimRegistry,
+    HypercoreCompliance works in tandem with Hypershare and the HyperbaseClaimRegistry,
     recording which attributes a prospective shareholder must have in order to receive
     shares. These attributes are known as claims. Unless a user is whitelisted, when a
-    share transfer is initiated the HypershareCompliance contract iterates through the
+    share transfer is initiated the HypercoreCompliance contract iterates through the
     necessary claims, comparing them against the claims held by the prospective
     shareholder in the HyperbaseClaimRegistry. 
 
  */
-contract HypershareCompliance is IHypershareCompliance, Ownable {
+contract HypercoreCompliance is IHypercoreCompliance, Ownable {
 
   	////////////////
     // INTERFACES

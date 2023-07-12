@@ -9,7 +9,7 @@ import "openzeppelin-contracts/contracts/token/ERC1155/extensions/ERC1155Pausabl
 import "openzeppelin-contracts/contracts/access/Ownable.sol";
 
 // Interfaces
-import '../interface/IHypershareCompliance.sol';
+import '../interface/IHypercoreCompliance.sol';
 import '../interface/IHypershareRegistry.sol';
 
 /**
@@ -31,7 +31,7 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     /**
      * @dev The compliance claims checker contract. 
      */
-    IHypershareCompliance public _compliance;
+    IHypercoreCompliance public _compliance;
 
     /**
      * @dev The shareholder registry for this Hypershare contract.
@@ -464,9 +464,9 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         public 
         onlyOwner
     {
-        _compliance = IHypershareCompliance(compliance);
+        _compliance = IHypercoreCompliance(compliance);
         
-        emit UpdatedHypershareCompliance(compliance);  
+        emit UpdatedHypercoreCompliance(compliance);  
     }
 
     /** 

@@ -8,9 +8,9 @@ Hypershare is a toolkit for asset tokenisation, allowing entrepreneurs to create
 
 Hypershare is an ERC1155 based tokenised equity contract. It provides all the functions traditionally associated with an ERC1155 token contract, plus additional issuer controls designed (and legally required in some jurisdictions) to support for equity shares. These features include forced transfers and share recovery in the event that a shareholder has lost access to their wallet.
 
-## HypershareCompliance.sol
+## HypercoreCompliance.sol
 
-HypershareCompliance works in tandem with Hypershare and the HyperbaseClaimRegistry, recording which attributes a prospective shareholder must have in order to receive shares. These attributes are known as claims. Unless a user is whitelisted, when a share transfer is initiated the HypershareCompliance contract iterates through the necessary claims, comparing them against the claims held by the prospective shareholder in the HyperbaseClaimRegistry. 
+HypercoreCompliance works in tandem with Hypershare and the HyperbaseClaimRegistry, recording which attributes a prospective shareholder must have in order to receive shares. These attributes are known as claims. Unless a user is whitelisted, when a share transfer is initiated the HypercoreCompliance contract iterates through the necessary claims, comparing them against the claims held by the prospective shareholder in the HyperbaseClaimRegistry. 
 
 ## HypershareRegistry.sol
 

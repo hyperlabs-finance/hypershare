@@ -7,15 +7,15 @@ import "forge-std/Vm.sol";
 
 import "./utils/Utils.sol";
 
-import "../src/Hypershare/HypershareCompliance.sol";
+import "../src/Hypershare/HypercoreCompliance.sol";
 
-contract HypershareComplianceTest is Test {
+contract HypercoreComplianceTest is Test {
     
     // Utils
     Utils public _utils;
 
     // Compliance
-    HypershareCompliance public _compliance;
+    HypercoreCompliance public _compliance;
 
     // Shareholders
     uint256 _noShareholders = 4;
@@ -38,7 +38,7 @@ contract HypershareComplianceTest is Test {
         _shareholders = _utils.createUsers(_noShareholders);
 
         // Compliance 
-		_compliance = new HypershareCompliance(address(101));
+		_compliance = new HypercoreCompliance(address(101));
     }
 
     //////////////////////////////////////////////

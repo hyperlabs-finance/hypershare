@@ -393,9 +393,6 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
         // Mint
         _mint(account, id, amount, data);
 
-        // Updates
-        _registry.mint(account, id, amount);  
-
         // Event
         emit MintTokens(account, id, amount, data);
     }
@@ -440,9 +437,6 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     {
         // Burn
         _burn(account, id, amount);
-
-        // Updates
-        _registry.burn(account, id, amount);
 
         // Event
         emit BurnTokens(account, id, amount, data);

@@ -69,6 +69,15 @@ interface IHypershare is IERC1155 {
      */
     event BurnTokens(address indexed account, uint256 indexed id, uint256 amount, bytes indexed data);
 
+    /**
+     * @dev Successful transfer of shares to new investor wallet.
+     */
+    event RecoverySuccess(address indexed lostWallet, address indexed newWallet);
+
+    /**
+     #TODO force transfer
+     */
+    
     //////////////////////////////////////////////
     // CREATE NEW TOKEN
     //////////////////////////////////////////////

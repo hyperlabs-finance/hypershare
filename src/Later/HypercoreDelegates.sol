@@ -8,7 +8,7 @@ import '../interface/IHypercoreDelegates.sol';
 
 /**
 
-    HypercoreDelegates keeps a record of delegation
+    HypercoreDelegates keeps a record of delegation for voting.
 
  */
 

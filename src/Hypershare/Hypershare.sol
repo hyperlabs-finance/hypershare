@@ -6,7 +6,6 @@ pragma solidity ^0.8.6;
 import '../interface/IHypershare.sol';
 import './HypershareCoreManager.sol';
 import "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
-import "openzeppelin-contracts/contracts/token/ERC1155/extensions/ERC1155Pausable.sol";
 import "openzeppelin-contracts/contracts/access/Ownable.sol";
 
 // Interfaces
@@ -23,7 +22,7 @@ import '../interface/IHypercoreRegistry.sol';
 
  */
 
-contract Hypershare is IHypershare, HypershareCoreManager, ERC1155, ERC1155Pausable, Ownable {
+contract Hypershare is IHypershare, HypershareCoreManager, ERC1155, Ownable {
 
     ////////////////
     // STATE
@@ -134,23 +133,25 @@ contract Hypershare is IHypershare, HypershareCoreManager, ERC1155, ERC1155Pausa
         _totalTokens++;
         
         // If has hypercores
-        if (hypercores_.length != 0) {
-            for (uint8 i = 0; i < hypercores_.length; i++) {
+        /**
+            if (hypercores_.length != 0) {
+                for (uint8 i = 0; i < hypercores_.length; i++) {
 
-                // #TODO, this needs to be partioned based on token id
-                
-                hypercores[hypercores_[i]] = true;
+                    // #TODO, this needs to be partioned based on token id
+                    
+                    hypercores[hypercores_[i]] = true;
 
-                if (hypercoresData_[i].length != 0) {
-                    (bool success, ) = hypercores_[i].call(hypercoresData_[i]);
+                    if (hypercoresData_[i].length != 0) {
+                        (bool success, ) = hypercores_[i].call(hypercoresData_[i]);
 
-                    // If init failed 
-                    if (!success)
-                        revert InitCallFail();
+                        // If init failed 
+                        if (!success)
+                            revert InitCallFail();
+                    }
+
                 }
-
             }
-        }
+        */
 
         // Event
         emit createToken(_totalTokens, shareholderLimit, shareholdingMinimum, shareholdingNonDivisible);
@@ -159,8 +160,39 @@ contract Hypershare is IHypershare, HypershareCoreManager, ERC1155, ERC1155Pausa
     }
 
     //////////////////////////////////////////////
-    // TRANSFERS
+    // ISSUER CONTROLS
     //////////////////////////////////////////////
+
+    /** 
+     * @dev Owner-operator function to burn and reissue shares in the event of a lost wallet.
+     * @param lostWallet The address of the wallet that contains the shares for reissue.
+     * @param newWallet The address of the wallet that reissued shares should be sent to.
+     * @param data Optional data field to include in events.
+    */
+	function recover(
+        address lostWallet,
+        address newWallet,
+        bytes memory data
+    )
+        external
+        onlyOwner 
+        returns (bool)
+    {
+        // For all tokens 
+        for (uint8 id = 0; id < _totalTokens; id++)
+
+            // If user has balance for tokens
+            if (balanceOf(lostWallet, id) > 0)
+
+                // Transfer tokens from old account to new one
+                forcedTransferFrom(lostWallet, newWallet, id, balanceOf(lostWallet, id), data);
+                
+        
+        // Event
+        emit RecoverySuccess(lostWallet, newWallet);
+
+        return true;
+    }
 	
     /** 
      * @dev Owner-operator function to force a batch transfer from an address. May be used to burn
@@ -339,7 +371,8 @@ contract Hypershare is IHypershare, HypershareCoreManager, ERC1155, ERC1155Pausa
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = amount;
 
-        _beforeTokenTransfer(_msgSender(), from, to, ids, amounts, data);
+        super._beforeTokenTransfer(_msgSender(), from, to, ids, amounts, data);
+        super._beforeCallHypercores(_msgSender(), from, to, ids, amounts, data);
 
 		return true;
 	}
@@ -365,7 +398,7 @@ contract Hypershare is IHypershare, HypershareCoreManager, ERC1155, ERC1155Pausa
 		override(ERC1155, ERC1155Pausable)
 	{
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
-        super._callHypercores(operator, from, to, ids, amounts, data);
+        super._beforeCallHypercores(operator, from, to, ids, amounts, data);
 	}
 
     /**
@@ -389,7 +422,7 @@ contract Hypershare is IHypershare, HypershareCoreManager, ERC1155, ERC1155Pausa
 		override(ERC1155)
 	{
         super._afterTokenTransfer(operator, from, to, ids, amounts, data);
-        super._callHypercores(operator, from, to, ids, amounts, data);
+        super._afterCallHypercores(operator, from, to, ids, amounts, data);
 	}
 
 }

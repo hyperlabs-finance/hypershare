@@ -8,12 +8,12 @@ import "forge-std/Vm.sol";
 import "./utils/Utils.sol";
 
 import "../src/Hypershare/Hypershare.sol";
-import "../src/Hypershare/HypershareRegistry.sol";
+import "../src/Hypershare/HypercoreRegistry.sol";
 
 contract HypershareTest is Test {
     
     Hypershare public _hypershare;
-    HypershareRegistry public _registry;
+    HypercoreRegistry public _registry;
     
     Utils public _utils;
     
@@ -41,7 +41,7 @@ contract HypershareTest is Test {
             address(0)
         ); 
 
-        _registry = new HypershareRegistry(
+        _registry = new HypercoreRegistry(
             address(_hypershare),
             address(0)
         );
@@ -49,7 +49,7 @@ contract HypershareTest is Test {
 	    _hypershare.setRegistry(address(_registry));
     }
 
-    function testNewToken() public {
+    function testcreateToken() public {
         
         uint256 startingTokens = _hypershare.getTotalTokens();
 
@@ -57,7 +57,7 @@ contract HypershareTest is Test {
         uint256 _minimumShareholding = 5 ether;
         bool _shareholdingNonDivisible = true;
         
-        _hypershare.newToken(
+        _hypershare.createToken(
             _maxNoShareholders,
 		    _minimumShareholding,
             _shareholdingNonDivisible
@@ -65,10 +65,10 @@ contract HypershareTest is Test {
 
         uint256 id = startingTokens + 1;
 
-        assertTrue(_hypershare.getTotalTokens() == id, "testNewToken: incorrect token ID");
-        assertTrue(_registry.getShareholderLimit(id) == _maxNoShareholders, "testNewToken: incorrect: _maxNoShareholders");
-        assertTrue(_registry.getShareholdingMinimum(id) == _minimumShareholding, "testNewToken: incorrect: _minimumShareholding");
-        // assertTrue(_registry.checkNonDivisible(id) == _shareholdingNonDivisible, "testNewToken: incorrect: _shareholdingNonDivisible");
+        assertTrue(_hypershare.getTotalTokens() == id, "testcreateToken: incorrect token ID");
+        assertTrue(_registry.getShareholderLimit(id) == _maxNoShareholders, "testcreateToken: incorrect: _maxNoShareholders");
+        assertTrue(_registry.getShareholdingMinimum(id) == _minimumShareholding, "testcreateToken: incorrect: _minimumShareholding");
+        // assertTrue(_registry.checkNonDivisible(id) == _shareholdingNonDivisible, "testcreateToken: incorrect: _shareholdingNonDivisible");
 
     }
     
@@ -119,7 +119,7 @@ contract HypershareTest is Test {
 
         vm.prank(_shareholders[0]);
         
-        vm.expectRevert(bytes("HypershareRegistry: Account is frozen"));
+        vm.expectRevert(bytes("HypercoreRegistry: Account is frozen"));
 
         _hypershare.safeTransferFrom(
             _shareholders[0],
@@ -141,7 +141,7 @@ contract HypershareTest is Test {
 
         vm.prank(_shareholders[0]);
         
-        vm.expectRevert(bytes("HypershareRegistry: Share type is frozen on this account"));
+        vm.expectRevert(bytes("HypercoreRegistry: Share type is frozen on this account"));
         
         _hypershare.safeTransferFrom(
             _shareholders[0],
@@ -202,10 +202,10 @@ contract HypershareTest is Test {
 
     /*
     
-        require(checkNotFrozenSharesTransfer(amount, id, from), "HypershareRegistry: Insufficient unfrozen Balance");
-        require(checkWithinShareholderLimit(id), "HypershareRegistry: Transfer exceeds shareholder limit");
-        require(checkAboveMinimumShareholdingTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in shareholdings below minimum");
-        require(checkAmountNonDivisibleTransfer(to, from, id, amount), "HypershareRegistry: Transfer results in fractional shares");
+        require(checkNotFrozenSharesTransfer(amount, id, from), "HypercoreRegistry: Insufficient unfrozen Balance");
+        require(checkWithinShareholderLimit(id), "HypercoreRegistry: Transfer exceeds shareholder limit");
+        require(checkAboveMinimumShareholdingTransfer(to, from, id, amount), "HypercoreRegistry: Transfer results in shareholdings below minimum");
+        require(checkAmountNonDivisibleTransfer(to, from, id, amount), "HypercoreRegistry: Transfer results in fractional shares");
 
     */
 }

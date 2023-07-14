@@ -3,7 +3,8 @@
 pragma solidity ^0.8.6;
 
 // Inherited
-import '../interface/IHypershareRegistry.sol';
+import './Hypercore.sol';
+import '../interface/IHypercoreRegistry.sol';
 import 'openzeppelin-contracts/contracts/access/Ownable.sol';
 
 // Interfaces
@@ -12,14 +13,14 @@ import '../interface/IHypershare.sol';
 
 /**
 
-    HypershareRegistry keeps an on-chain record of the shareholders of its corresponding Hypershare
+    HypercoreRegistry keeps an on-chain record of the shareholders of its corresponding Hypershare
     contract. It then uses this record to enforce limit-based compliance checks, such as ensuring
     that a share transfer does not result in too many shareholders, fractional shareholdings or 
     that a shareholder has not been frozen by the owner-operator.
 
  */
 
-contract HypershareRegistry is IHypershareRegistry, Ownable  {
+contract HypercoreRegistry is Hypercore, IHypercoreRegistry, Ownable  {
 
     ////////////////
     // INTERFACES
@@ -274,7 +275,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
      * @param shareholdingMinimum The minimum amount of shares per shareholder for the token.
      * @param shareholdingNonDivisible boolean as to if share transfers can result in fractional shares. 
      */
-    function newToken(
+    function createToken(
         uint256 tokenId,
         uint256 shareholderLimit,
         uint256 shareholdingMinimum,
@@ -346,6 +347,7 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
             _shareholdersByToken[tokenId].push(account);
             _shareholderExistsByAccountByToken[tokenId][account] = true;
             _shareholderCountbyCountryByToken[tokenId][_identity.getCountryByAddress(account)]++;
+                // #TODO, get shareholder manually or ??
         }
     }
 
@@ -514,6 +516,53 @@ contract HypershareRegistry is IHypershareRegistry, Ownable  {
 
         // Event
         emit SharesFrozen(tokenId, account, amount);
+    }
+
+    //////////////////////////////////////////////
+    // RECOVER
+    //////////////////////////////////////////////
+
+    /** 
+    #TODO, add write access to hypershare and refactor this to be 
+     * @dev Owner-operator function to burn and reissue shares in the event of a lost wallet.
+     * @param lostWallet The address of the wallet that contains the shares for reissue.
+     * @param newWallet The address of the wallet that reissued shares should be sent to.
+     * @param data Optional data field to include in events.
+    */
+	function recover(
+        address lostWallet,
+        address newWallet,
+        bytes memory data
+    )
+        external
+        onlyOwner 
+        returns (bool)
+    {
+        _registry.setFrozenAll(newWallet, _registry.checkFrozenAll(lostWallet));
+    
+        // For all tokens 
+        for (uint256 id = 0; id < _totalTokens; id++) {
+            
+            // If user has balance for tokens
+            if (balanceOf(lostWallet, id) > 0) {
+
+                // Transfer tokens from old account to new one
+                forcedTransferFrom(lostWallet, newWallet, id, balanceOf(lostWallet, id), data);
+
+                // Freeze partial shares
+                uint256 frozenShares = _registry.getFrozenShares(lostWallet, id);
+
+                // If has frozen shares freeze on new account
+                if (frozenShares > 0) 
+                    _registry.freezeShares(id, newWallet, frozenShares);
+                
+            }
+        }
+        
+        // Event
+        emit RecoverySuccess(lostWallet, newWallet);
+
+        return true;
     }
 
     //////////////////////////////////////////////

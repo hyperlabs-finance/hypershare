@@ -12,6 +12,6 @@ Hypershare is an ERC1155 based tokenised equity contract. It provides all the fu
 
 HypercoreCompliance works in tandem with Hypershare and the HyperbaseClaimRegistry, recording which attributes a prospective shareholder must have in order to receive shares. These attributes are known as claims. Unless a user is whitelisted, when a share transfer is initiated the HypercoreCompliance contract iterates through the necessary claims, comparing them against the claims held by the prospective shareholder in the HyperbaseClaimRegistry. 
 
-## HypershareRegistry.sol
+## HypercoreRegistry.sol
 
-HypershareRegistry keeps an on-chain record of the shareholders of its corresponding Hypershare contract. It then uses this record to enforce limit-based compliance checks, such as ensuring that a share transfer does not result in too many shareholders, fractional shareholdings or  that a shareholder has not been frozen by the owner-operator.
+HypercoreRegistry keeps an on-chain record of the shareholders of its corresponding Hypershare contract. It then uses this record to enforce limit-based compliance checks, such as ensuring that a share transfer does not result in too many shareholders, fractional shareholdings or  that a shareholder has not been frozen by the owner-operator.

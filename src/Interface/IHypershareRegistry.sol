@@ -1,7 +1,7 @@
 
 pragma solidity ^0.8.6;
 
-interface IHypershareRegistry {
+interface IHypercoreRegistry {
 
   	////////////////
     // ERRORS
@@ -117,6 +117,11 @@ interface IHypershareRegistry {
     event SharesUnfrozen(uint256 indexed tokenId, address indexed account, uint256 amount);
 
     /**
+     * @dev Successful transfer of shares to new investor wallet.
+     */
+    event RecoverySuccess(address indexed lostWallet, address indexed newWallet);
+    
+    /**
      * @dev Added or updated the Hypershare contract
      */ 
     event UpdatedHypershare(address indexed share);
@@ -137,7 +142,7 @@ interface IHypershareRegistry {
     // NEW TOKEN 
     //////////////////////////////////////////////
     
-    function newToken(uint256 tokenId, uint256 shareholderLimit, uint256 shareholdingMinimum, bool shareholdingNonDivisible) external;
+    function createToken(uint256 tokenId, uint256 shareholderLimit, uint256 shareholdingMinimum, bool shareholdingNonDivisible) external;
 
     //////////////////////////////////////////////
     // MINT | BURN 

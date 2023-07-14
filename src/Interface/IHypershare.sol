@@ -55,24 +55,9 @@ interface IHypershare is IERC1155 {
     ////////////////
     
     /**
-     * @dev Added or updated the shareholder registry.
-     */
-    event UpdatedHypershareRegistry(address indexed registry);  
-    
-    /**
-     * @dev Added or updated the compliance claims contract.
-     */
-    event UpdatedHypercoreCompliance(address indexed compliance);  
-    
-    /**
-     * @dev Successful transfer of shares to new investor wallet.
-     */
-    event RecoverySuccess(address indexed lostWallet, address indexed newWallet);
-    
-    /**
      * @dev New share type created.
      */
-    event NewToken(uint256 indexed id, uint256 shareholderLimit, uint256 shareholdingMinimum, bool shareholdingNonDivisible);
+    event createToken(uint256 indexed id, uint256 shareholderLimit, uint256 shareholdingMinimum, bool shareholdingNonDivisible);
     
     /**
      * @dev New shares issued.
@@ -88,7 +73,7 @@ interface IHypershare is IERC1155 {
     // CREATE NEW TOKEN
     //////////////////////////////////////////////
 
-    function newToken(uint256 shareholderLimit, uint256 shareholdingMinimum, bool shareholdingNonDivisible) external returns (uint256);
+    function createToken(uint256 shareholderLimit, uint256 shareholdingMinimum, bool shareholdingNonDivisible) external returns (uint256);
 
     //////////////////////////////////////////////
     // TRANSFERS

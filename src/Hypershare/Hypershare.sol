@@ -10,7 +10,7 @@ import "openzeppelin-contracts/contracts/access/Ownable.sol";
 
 // Interfaces
 import '../interface/IHypercoreCompliance.sol';
-import '../interface/IHypershareRegistry.sol';
+import '../interface/IHypercoreRegistry.sol';
 
 /**
 
@@ -25,20 +25,6 @@ import '../interface/IHypershareRegistry.sol';
 contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 
     ////////////////
-    // INTERFACES
-    ////////////////
-
-    /**
-     * @dev The compliance claims checker contract. 
-     */
-    IHypercoreCompliance public _compliance;
-
-    /**
-     * @dev The shareholder registry for this Hypershare contract.
-     */
-    IHypershareRegistry public _registry;
-
-    ////////////////
     // STATE
     ////////////////
 
@@ -51,20 +37,7 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     // CONSTRUCTOR
     ////////////////
 
-    constructor(
-		string memory uri_,
-        address compliance,
-        address registry
-    )
-        // Used as the URI for all token types by relying on ID substitution, e.g. https://token-cdn-domain/{id}.json
-        ERC1155(uri_)
-    {
-        // Set compliance
-        setCompliance(compliance);
-
-    	// Set registry
-	    setRegistry(registry);
-    }
+    constructor(string memory uri_) ERC1155(uri_) {}
 
     ////////////////
     // MODIFIERS
@@ -129,29 +102,57 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     // CREATE NEW TOKEN
     //////////////////////////////////////////////
 
+    /** 
+     * @dev Returns the total token count where token IDs are incremental values.
+     */
+    function getTotalTokens()
+        public
+        view 
+        returns (uint256)
+    {
+        return _totalTokens;
+    }
+
     /**
      * @dev Create a new token by incrementing token ID and initizializing in the compliance contracts.
-     * @param shareholderLimit The maxium number of shareholders. 
-     * @param shareholdingMinimum The minimum amount of shares per shareholder. 
-     * @param shareholdingNonDivisible The boolean value as to if the share type is non-divisible. 
+     * @param 
      */
-    function newToken(
-        uint256 shareholderLimit,
-        uint256 shareholdingMinimum,
-        bool shareholdingNonDivisible
+    function createToken(
+        address[] memory hypercores_,
+        bytes[] memory hypercoresData_
     )
         public
         onlyOwner
         returns (uint256)
     {
+        // Ensure hypercore array parity
+        if (hypercores_.length != hypercoresData_.length)
+            revert NoArrayParity();
+
         // Increment tokens
         _totalTokens++;
+        
+        // If has hypercores
+        if (hypercores_.length != 0) {
+            for (uint8 i = 0; i < hypercores_.length; i++) {
 
-        // Register the new token
-        _registry.newToken(_totalTokens, shareholderLimit, shareholdingMinimum, shareholdingNonDivisible);
+                // #TODO, this needs to be partioned based on token id
+                
+                hypercores[hypercores_[i]] = true;
+
+                if (hypercoresData_[i].length != 0) {
+                    (bool success, ) = hypercores_[i].call(hypercoresData_[i]);
+
+                    // If init failed 
+                    if (!success)
+                        revert InitCallFail();
+                }
+
+            }
+        }
 
         // Event
-        emit NewToken(_totalTokens, shareholderLimit, shareholdingMinimum, shareholdingNonDivisible);
+        emit createToken(_totalTokens, shareholderLimit, shareholdingMinimum, shareholdingNonDivisible);
 
         return _totalTokens;
     }
@@ -159,39 +160,6 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     //////////////////////////////////////////////
     // TRANSFERS
     //////////////////////////////////////////////
-
-    /**
-     * @dev Pre validate the token transfer to ensure that the actual transfer will not fail under
-       the same conditions. 
-     *
-     * @param from The transfering address. 
-     * @param to The receiving address. 
-     * @param id The id of the token transfer.
-     * @param amount The amount of tokens to transfer.
-     * @param data Optional data field to include in events.
-     */
-	function checkTransferIsValid(
-        address from,
-        address to,
-        uint256 id,
-        uint256 amount,
-        bytes memory data
-    )
-        public
-        transferToZeroAddress(to)
-        sufficientTokens(from, id, amount)
-        returns (bool)
-    {
-        uint256[] memory ids = new uint256[](1);
-        ids[0] = id;
-
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = amount;
-
-        _beforeTokenTransfer(_msgSender(), from, to, ids, amounts, data);
-
-		return true;
-	}
 	
     /** 
      * @dev Owner-operator function to force a batch transfer from an address. May be used to burn
@@ -241,110 +209,6 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 		onlyOwner
 	{
 		_safeTransferFrom(from, to, id, amount, data);
-	}
-
-    /** 
-     * @dev Owner-operator function to burn and reissue shares in the event of a lost wallet.
-     * @param lostWallet The address of the wallet that contains the shares for reissue.
-     * @param newWallet The address of the wallet that reissued shares should be sent to.
-     * @param data Optional data field to include in events.
-    */
-	function recover(
-        address lostWallet,
-        address newWallet,
-        bytes memory data
-    )
-        external
-        onlyOwner 
-        returns (bool)
-    {
-        _registry.setFrozenAll(newWallet, _registry.checkFrozenAll(lostWallet));
-    
-        // For all tokens 
-        for (uint256 id = 0; id < _totalTokens; id++) {
-            
-            // If user has balance for tokens
-            if (balanceOf(lostWallet, id) > 0) {
-
-                // Transfer tokens from old account to new one
-                forcedTransferFrom(lostWallet, newWallet, id, balanceOf(lostWallet, id), data);
-
-                // Freeze partial shares
-                uint256 frozenShares = _registry.getFrozenShares(lostWallet, id);
-
-                // If has frozen shares freeze on new account
-                if (frozenShares > 0) 
-                    _registry.freezeShares(id, newWallet, frozenShares);
-                
-            }
-        }
-        
-        // Event
-        emit RecoverySuccess(lostWallet, newWallet);
-
-        return true;
-    }
-
-    //////////////////////////////////////////////
-    // HOOKS
-    //////////////////////////////////////////////
-
-    /**
-     * @dev ERC-1155 before transfer hook. Used to validate the transfer with the compliance contracts. 
-     * @param operator The address of the contract owner/operator.
-     * @param from The transfering address. 
-     * @param to The receiving address. 
-     * @param ids An array of token IDs for the token transfer.
-     * @param amounts An array of integer amounts for each of the token IDs in the token transfer.
-     * @param data Optional data field to include in events.
-     */
-    function _beforeTokenTransfer(
-        address operator,
-        address from,
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
-    )
-		internal
-		override(ERC1155, ERC1155Pausable)
-	{
-        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
-        
-        // Ensure that the receiver has the required claims.
-        if (address(_compliance) != address(0))
-            if (!_compliance.checkCanTransferBatch(to, from, ids, amounts))
-                revert RecieverInelligible();
-
-        // Ensure that the transfer does not violate any of the transfer limits.
-        if (address(_registry) != address(0))
-            if (!_registry.checkCanTransferBatch(to, from, ids, amounts))
-                revert TransferInelligible();
-	}
-
-    /**
-     * @dev ERC-1155 after transfer hook. Used to update the shareholder registry to reflect the transfer. 
-     * @param operator The address of the contract owner/operator.
-     * @param from The transfering address. 
-     * @param to The receiving address. 
-     * @param ids An array of token IDs for the token transfer.
-     * @param amounts An array of integer amounts for each of the token IDs in the token transfer.
-     * @param data Optional data field to include in events.
-     */
-    function _afterTokenTransfer(
-        address operator,
-        address from,
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
-    )
-		internal
-		override(ERC1155)
-	{
-        if (address(_registry) != address(0))
-            if (!_registry.batchTransferred(from, to, ids, amounts))
-                revert CouldNotUpdateShareholders();
 	}
 
     //////////////////////////////////////////////
@@ -443,56 +307,157 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
     }
 
     //////////////////////////////////////////////
-    // SETTERS
+    // HOOKS
     //////////////////////////////////////////////
 
-    /** 
-     * @dev Set the address of the compliance contract. Complaince checks the claims of the receiver to
-     * ensure their elligibility.
+    /**
+     * @dev Pre validate the token transfer to ensure that the actual transfer will not fail under
+       the same conditions. 
      *
-     * @param compliance The new compliance contract address. 
+     * @param from The transfering address. 
+     * @param to The receiving address. 
+     * @param id The id of the token transfer.
+     * @param amount The amount of tokens to transfer.
+     * @param data Optional data field to include in events.
      */
-    function setCompliance(
-        address compliance
-    ) 
-        public 
-        onlyOwner
-    {
-        _compliance = IHypercoreCompliance(compliance);
-        
-        emit UpdatedHypercoreCompliance(compliance);  
-    }
-
-    /** 
-     * @dev Set the address of the registry contract. Registry records the token shareholders on chain 
-     * and enforces limit-based transfer restrictions.
-     *
-     * @param registry The new registry contract address. 
-     */
-	function setRegistry(
-        address registry
+	function checkTransferIsValid(
+        address from,
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
     )
         public
-        onlyOwner
+        transferToZeroAddress(to)
+        sufficientTokens(from, id, amount)
+        returns (bool)
     {
-        _registry = IHypershareRegistry(registry);
-        
-        emit UpdatedHypershareRegistry(registry);  
-    }
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = id;
 
-    //////////////////////////////////////////////
-    // GETTERS
-    //////////////////////////////////////////////
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = amount;
 
-    /** 
-     * @dev Returns the total token count where token IDs are incremental values.
+        _beforeTokenTransfer(_msgSender(), from, to, ids, amounts, data);
+
+		return true;
+	}
+
+    /**
+     * @dev ERC-1155 before transfer hook. Used to pre-validate the transfer with the Hypercores. 
+     * @param operator The address of the contract owner/operator.
+     * @param from The transfering address. 
+     * @param to The receiving address. 
+     * @param ids An array of token IDs for the token transfer.
+     * @param amounts An array of integer amounts for each of the token IDs in the token transfer.
+     * @param data Optional data field to include in events.
      */
-    function getTotalTokens()
-        public
-        view 
-        returns (uint256)
+    function _beforeTokenTransfer(
+        address operator,
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory data
+    )
+		internal
+		override(ERC1155, ERC1155Pausable)
+	{
+        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
+        
+        // #TODO
+        for (uint 8 i = 0; i < hypercores.length; i++)
+            // Validate that hypercore needs calling
+                // Encode data fields 
+                // _callHypercore with data
+                
+                // ??
+                // Get return values (target, returnData)
+                // If target, 
+                    // _callHypercore with returnData
+	}
+
+    /**
+     * @dev ERC-1155 after transfer hook. Used to update the shareholder registry to reflect the transfer. 
+     * @param operator The address of the contract owner/operator.
+     * @param from The transfering address. 
+     * @param to The receiving address. 
+     * @param ids An array of token IDs for the token transfer.
+     * @param amounts An array of integer amounts for each of the token IDs in the token transfer.
+     * @param data Optional data field to include in events.
+     */
+    function _afterTokenTransfer(
+        address operator,
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory data
+    )
+		internal
+		override(ERC1155)
+	{
+        
+        // #TODO 
+        for (uint 8 i = 0; i < hypercores.length; i++)
+            // Validate that hypercore needs calling
+                // Encode data fields 
+                // _callHypercore with data
+                
+                // ??
+                // Get return values (target, returnData)
+                // If target, 
+                    // _callHypercore with returnData
+	}
+    
+    //////////////////////////////////////////////
+    // HYPERCORE FUNCTIONS
+    //////////////////////////////////////////////
+     
+    /**
+     * @dev 
+     * @param hypercore
+     * @param hypercoreData
+     */
+    function _setHypercore(
+        address hypercore, 
+        bytes calldata hypercoreData
+    )
+        internal
     {
-        return _totalTokens;
+
+        /**
+        
+            for (uint256 i; i < prop.accounts.length; i++) {
+                if (prop.amounts[i] != 0) 
+                    hypercores[prop.accounts[i]] = !hypercores[prop.accounts[i]];
+            
+                if (prop.payloads[i].length != 0) IHypercore(prop.accounts[i])
+                    .setHypercore(prop.payloads[i]);
+            }
+        
+         */
+
     }
+
+    /**
+     * @dev 
+     * @param hypercore
+     * @param hypercoreData
+     */
+    function _callHypercore(
+        address hypercore, 
+        bytes calldata hypercoreData
+    )
+        internal
+    {
+        // Ensure Hypercore returns bool true in from mapping of Hypercores
+        if (!hypercores[hypercore] && !hypercores[msg.sender])
+            revert NotHypercore();
+        
+        (returnData) = IHypercore(hypercore).callHypercore{value: msg.value}(operator, from, to, ids, amounts, data, hypercoreData);
+        
+    }
+
 
 }

@@ -29,9 +29,6 @@ contract HypershareCoreManager {
 
     mapping(address => bool) public hypercores;
 
-    address[] public hypercoreBeforeCall;
-    address[] public hypercoreAfterCall;
-
     ////////////////
     // CONSTRUCTOR
     ////////////////

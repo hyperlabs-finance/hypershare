@@ -2,13 +2,28 @@
 
 pragma solidity >=0.8.4;
 
+// Inherited
+import 'openzeppelin-contracts/contracts/access/Ownable.sol';
+
+// Interfaces
+import '../interface/IHypershare.sol';
+
 /**
 
 	TODO, reduce this to a generalised extension interface inhereted by all Hypercores.
 
  */
 
-contract Hypercore is IHypercore {
+contract Hypercore is IHypercore, Ownable {
+
+    ////////////////
+    // INTERFACES
+    ////////////////
+
+    /**
+     * @dev The share contract instance.
+     */ 
+    IHypershare _share;
 
     //////////////////////////////////////////////
     // HYPERCORE FUNCTIONS
@@ -21,7 +36,9 @@ contract Hypercore is IHypercore {
         nonReentrant
         virtual
     {
-        () = abi.decode(hypercoreData, ());
+        setShare(msg.sender); 
+        
+        (/* fields, fields, fields */) = abi.decode(hypercoreData, (/* fields, fields, fields */));
         
         emit HypercoreSet(hypercoreData);
     }
@@ -41,4 +58,24 @@ contract Hypercore is IHypercore {
         emit HypercoreCalled(hypercoreData);
     }
 
+    //////////////////////////////////////////////
+    // SETTERS
+    //////////////////////////////////////////////
+
+    /**
+     * @dev Sets the hypershare contract.
+     * @param share The address of the Hypershare contract.
+     */
+    function setShare(
+        address share
+    )
+        public 
+        onlyShareOrOwner
+    {
+        _share = IHypershare(share);
+
+        // Event
+        emit UpdatedHypershare(share);
+    }
+    
 }

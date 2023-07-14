@@ -35,11 +35,6 @@ contract HypercoreCompliance is IHypercoreCompliance, Ownable {
     ////////////////
 
     /**
-     * @dev Mapping from token ID to claims topics that will be required to receive shares.
-     */
-    mapping(uint256 => uint256[]) private _claimTopicsRequired;
-    
-    /**
      * @dev Mapping from user address to bool exemption status for all tokens.
      */
     mapping(address => bool) private _whitelistedAll;
@@ -48,6 +43,11 @@ contract HypercoreCompliance is IHypercoreCompliance, Ownable {
      * @dev Mapping from token ID to user address to bool exemption status.
      */
     mapping(uint256 => mapping(address => bool)) public _whitelistedTokenId;
+    
+    /**
+     * @dev Mapping from token ID to claims topics that will be required to receive shares.
+     */
+    mapping(uint256 => uint256[]) private _claimTopicsRequired;
 
   	////////////////
     // CONSTRUCTOR

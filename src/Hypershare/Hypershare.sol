@@ -4,6 +4,7 @@ pragma solidity ^0.8.6;
 
 // Inheriting
 import '../interface/IHypershare.sol';
+import './HypershareCoreManager.sol';
 import "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
 import "openzeppelin-contracts/contracts/token/ERC1155/extensions/ERC1155Pausable.sol";
 import "openzeppelin-contracts/contracts/access/Ownable.sol";
@@ -22,7 +23,7 @@ import '../interface/IHypercoreRegistry.sol';
 
  */
 
-contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
+contract Hypershare is IHypershare, HypershareCoreManager, ERC1155, ERC1155Pausable, Ownable {
 
     ////////////////
     // STATE
@@ -364,17 +365,7 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 		override(ERC1155, ERC1155Pausable)
 	{
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
-        
-        // #TODO
-        for (uint 8 i = 0; i < hypercores.length; i++)
-            // Validate that hypercore needs calling
-                // Encode data fields 
-                // _callHypercore with data
-                
-                // ??
-                // Get return values (target, returnData)
-                // If target, 
-                    // _callHypercore with returnData
+        super._callHypercores(operator, from, to, ids, amounts, data);
 	}
 
     /**
@@ -397,67 +388,8 @@ contract Hypershare is IHypershare, ERC1155, ERC1155Pausable, Ownable {
 		internal
 		override(ERC1155)
 	{
-        
-        // #TODO 
-        for (uint 8 i = 0; i < hypercores.length; i++)
-            // Validate that hypercore needs calling
-                // Encode data fields 
-                // _callHypercore with data
-                
-                // ??
-                // Get return values (target, returnData)
-                // If target, 
-                    // _callHypercore with returnData
+        super._afterTokenTransfer(operator, from, to, ids, amounts, data);
+        super._callHypercores(operator, from, to, ids, amounts, data);
 	}
-    
-    //////////////////////////////////////////////
-    // HYPERCORE FUNCTIONS
-    //////////////////////////////////////////////
-     
-    /**
-     * @dev 
-     * @param hypercore
-     * @param hypercoreData
-     */
-    function _setHypercore(
-        address hypercore, 
-        bytes calldata hypercoreData
-    )
-        internal
-    {
-
-        /**
-        
-            for (uint256 i; i < prop.accounts.length; i++) {
-                if (prop.amounts[i] != 0) 
-                    hypercores[prop.accounts[i]] = !hypercores[prop.accounts[i]];
-            
-                if (prop.payloads[i].length != 0) IHypercore(prop.accounts[i])
-                    .setHypercore(prop.payloads[i]);
-            }
-        
-         */
-
-    }
-
-    /**
-     * @dev 
-     * @param hypercore
-     * @param hypercoreData
-     */
-    function _callHypercore(
-        address hypercore, 
-        bytes calldata hypercoreData
-    )
-        internal
-    {
-        // Ensure Hypercore returns bool true in from mapping of Hypercores
-        if (!hypercores[hypercore] && !hypercores[msg.sender])
-            revert NotHypercore();
-        
-        (returnData) = IHypercore(hypercore).callHypercore{value: msg.value}(operator, from, to, ids, amounts, data, hypercoreData);
-        
-    }
-
 
 }
